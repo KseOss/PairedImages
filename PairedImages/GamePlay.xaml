@@ -1,0 +1,52 @@
+﻿<Window x:Class="PairedImages.GamePlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PairedImages"
+        mc:Ignorable="d"
+        Title="GamePlay" Height="780" Width="1620" Background="#16172B" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid x:Name="MainGrid">
+        <Image Source="/Images/Зерно.png" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Счетчики -->
+        <Label Content="НАЙДЕННЫЕ ПАРЫ" Margin="274,44,0,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="40" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+        <Label Content="СЧЕТЧИК ХОДОВ" Margin="839,44,0,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="40" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+        <Label Content="ВРЕМЯ" Margin="1260,44,0,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="40" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+
+        <Label x:Name="PairsLabel" Content="0/9" Margin="274,94,0,0" VerticalAlignment="Top" Foreground="White" FontSize="50" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+        <Label x:Name="MovesLabel" Content="0" Margin="839,94,0,0" VerticalAlignment="Top" Foreground="White" FontSize="50" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+        <Label x:Name="TimerLabel" Content="00:00" Margin="1260,94,0,0" VerticalAlignment="Top" Foreground="White" FontSize="50" Style="{StaticResource MM}" HorizontalAlignment="Left"/>
+
+        <Image Margin="213,40,1351,668" Source="/Images/eyes.png" Stretch="Fill"/>
+        <Image Margin="778,38,786,670" Source="/Images/writing hand.png" Stretch="Fill"/>
+        <Image Margin="1220,38,344,670" Source="/Images/clock.png" Stretch="Fill"/>
+
+        <!-- Игровое поле с карточками -->
+        <Image x:Name="Card1" Margin="384,177,1110,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card2" Margin="531,177,963,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card3" Margin="677,177,817,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card4" Margin="823,177,671,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card5" Margin="971,177,523,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card6" Margin="1117,177,377,460" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+
+        <Image x:Name="Card7" Margin="384,349,1110,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card8" Margin="531,349,963,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card9" Margin="677,349,817,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card10" Margin="823,349,671,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card11" Margin="971,349,523,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card12" Margin="1117,349,377,288" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+
+        <Image x:Name="Card13" Margin="384,520,1110,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card14" Margin="531,520,963,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card15" Margin="677,520,817,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card16" Margin="823,520,671,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card17" Margin="971,520,523,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+        <Image x:Name="Card18" Margin="1117,520,377,117" Source="/Images/Квадрат.png" Stretch="Fill" Cursor="Hand"/>
+
+        <!-- Кнопка выхода -->
+        <Button Margin="1400,650,100,50" Content="ВЫЙТИ" FontSize="25" Style="{StaticResource MM}" 
+                Background="Transparent" BorderBrush="#7E83F0" BorderThickness="3" Foreground="#D7D7D7"
+                Click="ExitButton_Click" Cursor="Hand"/>
+    </Grid>
+</Window>

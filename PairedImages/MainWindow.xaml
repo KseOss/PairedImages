@@ -1,0 +1,35 @@
+﻿<Window x:Class="PairedImages.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PairedImages"
+        mc:Ignorable="d"
+        Title="StartMenu" Height="780" Width="1620" Background="#16172B" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid>
+        <!--Основной бэкграунд-->
+        <Image Margin="10,10,10,10" Source="/Images/Линия.png" Stretch="Fill"/>
+        <Image Margin="488,-32,-59,624" Source="/Images/ПАРНЫЕ.png" Stretch="Fill" Opacity="0.5"/>
+        <Image Margin="323,142,106,450" Source="/Images/ПАРНЫЕ.png" Stretch="Fill" Opacity="0.5"/>
+        <Image Margin="203,313,226,279" Source="/Images/ПАРНЫЕ.png" Stretch="Fill" Opacity="0.5"/>
+        <Image Margin="29,483,400,109" Source="/Images/ПАРНЫЕ.png" Stretch="Fill " Opacity="0.5"/>
+        <Image Margin="-130,658,559,-66" Source="/Images/ПАРНЫЕ.png" Stretch="Fill" Opacity="0.5"/>
+        <Image Source="/Images/Зерно.png" Stretch="Fill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Image Margin="918,159,-24,135" Source="/Images/СМАЙЛИК С КРУТЫМИ ОЧКАМИ.png" Stretch="Fill"/>
+        <Label Content="ПАРНЫЕ" Margin="103,189,653,0" VerticalAlignment="Top" Foreground="#7E83F0" FontSize="150" Style="{StaticResource MBI}"/>
+        <Label Content="ПАРНЫЕ" Margin="103,185,657,0" VerticalAlignment="Top" Foreground="White" FontSize="149" Style="{StaticResource MBI}"/>
+        <Label Content="КАРТИНКИ" Margin="85,311,589,0" VerticalAlignment="Top" Foreground="#7E83F0" FontSize="115" Style="{StaticResource MBI}"/>
+        <Label Content="Игра «мемори» – это карточная настольная игра, состоящая из" Margin="93,439,409,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="30" Style="{StaticResource ML}"/>
+        <Label Content="из парных картинок, где основной целью игры является" Margin="93,470,409,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="30" Style="{StaticResource ML}"/>
+        <Label Content="«открытие» как можно большего числа парных карточек, за что" Margin="93,500,409,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="30" Style="{StaticResource ML}"/>
+        <Label Content="игру «мемори» еще называют игра «парочки»." Margin="93,528,409,0" VerticalAlignment="Top" Foreground="#BEBEBE" FontSize="30" Style="{StaticResource ML}"/>
+
+        <!--Кнопоньки-->
+        <Button Margin="99,591,1140,110" Content="НАЧАТЬ ИГРУ" FontSize="30" Style="{StaticResource MM}" 
+                Background="Transparent" BorderBrush="#7E83F0" BorderThickness="3" Foreground="#D7D7D7"
+                Click="StartGame_Click" Cursor="Hand"/>
+        <Button Margin="509,591,730,110" Content="ВЫЙТИ ИЗ ИГРЫ" FontSize="30" Style="{StaticResource MM}" 
+                Background="Transparent" BorderBrush="#7E83F0" BorderThickness="3" Foreground="#D7D7D7"
+                Click="ExitGame_Click" Cursor="Hand"/>
+    </Grid>
+</Window>

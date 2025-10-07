@@ -1,0 +1,25 @@
+﻿<Application x:Class="PairedImages.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PairedImages"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <Style x:Key="MBI">
+            <Setter Property="TextElement.FontFamily"
+                    Value="/Fonts/#Montserrat Black Italic">
+            </Setter>
+        </Style>
+
+        <Style x:Key="ML">
+            <Setter Property="TextElement.FontFamily"
+                    Value="/Fonts/#Montserrat Light">
+            </Setter>
+        </Style>
+
+        <Style x:Key="MM">
+            <Setter Property="TextElement.FontFamily"
+            Value="/Fonts/#Montserrat Medium">
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>
