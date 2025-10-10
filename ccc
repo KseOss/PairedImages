@@ -1,1 +1,343 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
+namespace PairedImages
+{
+    public partial class GamePlay : Window
+    {
+        private int movesCount = 0;
+        private int foundPairs = 0;
+        private const int totalPairs = 9;
+        private Image firstSelected;
+        private Image secondSelected;
+        private bool isProcessing = false;
+        private DispatcherTimer gameTimer;
+        private TimeSpan elapsedTime;
+        private Dictionary<Image, string> imagePairs = new Dictionary<Image, string>();
+
+        private List<string> imageNames = new List<string>
+        {
+            "dotted line face", "face with peeking eye", "face with spiral eyes",
+            "money mouth face", "sleeping face", "smiling face with hearts",
+            "smiling face with horns", "smiling face with sunglasses", "star struck"
+        };
+
+        public GamePlay()
+        {
+            InitializeComponent();
+            Height += 20;
+            Width += 20;
+            InitializeGame();
+            SetupTimer();
+        }
+
+        private void InitializeGame()
+        {
+            movesCount = 0;
+            foundPairs = 0;
+            elapsedTime = TimeSpan.Zero;
+
+            var allImages = new List<string>();
+            allImages.AddRange(imageNames);
+            allImages.AddRange(imageNames);
+            allImages = allImages.OrderBy(x => Guid.NewGuid()).ToList();
+
+            var imageControls = new List<Image>();
+            FindVisualChildren<Image>(MainGrid, imageControls);
+            imageControls = imageControls.Where(img => img.Name.StartsWith("Card")).OrderBy(img => img.Name).ToList();
+
+            imagePairs.Clear();
+
+            for (int i = 0; i < allImages.Count && i < imageControls.Count; i++)
+            {
+                string imagePath = $"/Images/{allImages[i]}.png";
+                imagePairs[imageControls[i]] = imagePath;
+
+                imageControls[i].Source = new BitmapImage(new Uri($"pack://application:,,,/Images/Квадрат.png"));
+                imageControls[i].Tag = "hidden";
+                imageControls[i].MouseDown += Card_MouseDown;
+            }
+
+            UpdateCounters();
+            UpdateTimerDisplay();
+
+            if (gameTimer != null)
+                gameTimer.Start();
+        }
+
+        private void SetupTimer()
+        {
+            elapsedTime = TimeSpan.Zero;
+            gameTimer = new DispatcherTimer();
+            gameTimer.Interval = TimeSpan.FromSeconds(1);
+            gameTimer.Tick += Timer_Tick;
+            gameTimer.Start();
+            UpdateTimerDisplay();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            elapsedTime = elapsedTime.Add(TimeSpan.FromSeconds(1));
+            UpdateTimerDisplay();
+        }
+
+        private void UpdateTimerDisplay()
+        {
+            TimerLabel.Content = $"{elapsedTime:mm\\:ss}";
+        }
+
+        private void Card_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (isProcessing) return;
+
+            Image clickedImage = sender as Image;
+            if (clickedImage == null || clickedImage.Tag?.ToString() == "matched" || clickedImage == firstSelected)
+                return;
+
+            string imagePath = imagePairs[clickedImage];
+            clickedImage.Source = new BitmapImage(new Uri($"pack://application:,,,{imagePath}"));
+            clickedImage.Tag = "revealed";
+
+            if (firstSelected == null)
+            {
+                firstSelected = clickedImage;
+            }
+            else
+            {
+                secondSelected = clickedImage;
+                isProcessing = true;
+                movesCount++;
+
+                if (imagePairs[firstSelected] == imagePairs[secondSelected])
+                {
+                    firstSelected.Tag = "matched";
+                    secondSelected.Tag = "matched";
+                    foundPairs++;
+                    
+                    // Сначала обновляем интерфейс, потом проверяем завершение
+                    UpdateCounters();
+                    ResetSelection();
+                    CheckGameCompletion();
+                }
+                else
+                {
+                    UpdateCounters();
+                    var timer = new DispatcherTimer();
+                    timer.Interval = TimeSpan.FromMilliseconds(1000);
+                    timer.Tick += (s, args) =>
+                    {
+                        timer.Stop();
+                        firstSelected.Source = new BitmapImage(new Uri("pack://application:,,,/Images/Квадрат.png"));
+                        secondSelected.Source = new BitmapImage(new Uri("pack://application:,,,/Images/Квадрат.png"));
+                        firstSelected.Tag = "hidden";
+                        secondSelected.Tag = "hidden";
+                        ResetSelection();
+                    };
+                    timer.Start();
+                }
+            }
+        }
+
+        private void ResetSelection()
+        {
+            firstSelected = null;
+            secondSelected = null;
+            isProcessing = false;
+        }
+
+        private void UpdateCounters()
+        {
+            MovesLabel.Content = movesCount.ToString();
+            PairsLabel.Content = $"{foundPairs}/{totalPairs}";
+        }
+
+        private void CheckGameCompletion()
+        {
+            if (foundPairs >= totalPairs) // Используем >= для надежности
+            {
+                gameTimer.Stop();
+                ShowGameCompletionDialog();
+            }
+        }
+
+        private void ShowGameCompletionDialog()
+        {
+            var dialog = new Window()
+            {
+                Title = "Игра завершена",
+                Height = 400,
+                Width = 600,
+                WindowStyle = WindowStyle.None,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = (Brush)new BrushConverter().ConvertFrom("#16172B"),
+                BorderBrush = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                BorderThickness = new Thickness(2),
+                Owner = this
+            };
+
+            var grid = new Grid();
+            dialog.Content = grid;
+
+            var backgroundImage = new Image()
+            {
+                Source = new BitmapImage(new Uri("pack://application:,,,/Images/Зерно.png")),
+                Stretch = Stretch.Fill,
+                Opacity = 0.7
+            };
+            grid.Children.Add(backgroundImage);
+
+            var border = new Border()
+            {
+                Background = (Brush)new BrushConverter().ConvertFrom("#16172B"),
+                BorderBrush = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(20),
+                CornerRadius = new CornerRadius(10)
+            };
+            grid.Children.Add(border);
+
+            var innerGrid = new Grid();
+            border.Child = innerGrid;
+
+            innerGrid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            innerGrid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(1, GridUnitType.Star) });
+            innerGrid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            innerGrid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+
+            var titleLabel = new Label()
+            {
+                Content = "ПОЗДРАВЛЯЕМ!",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                FontSize = 28,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 20, 0, 10)
+            };
+            Grid.SetRow(titleLabel, 0);
+            innerGrid.Children.Add(titleLabel);
+
+            var messageLabel = new Label()
+            {
+                Content = "Вы нашли все парные картинки!",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Brushes.White,
+                FontSize = 20,
+                Margin = new Thickness(20, 10, 20, 5)
+            };
+            Grid.SetRow(messageLabel, 1);
+            innerGrid.Children.Add(messageLabel);
+
+            var statsLabel = new Label()
+            {
+                Content = $"Ходов: {movesCount}\nВремя: {elapsedTime:mm\\:ss}",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = (Brush)new BrushConverter().ConvertFrom("#BEBEBE"),
+                FontSize = 18,
+                Margin = new Thickness(20, 5, 20, 10)
+            };
+            Grid.SetRow(statsLabel, 2);
+            innerGrid.Children.Add(statsLabel);
+
+            var buttonPanel = new StackPanel()
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 20, 0, 30)
+            };
+            Grid.SetRow(buttonPanel, 3);
+            innerGrid.Children.Add(buttonPanel);
+
+            var playAgainButton = new Button()
+            {
+                Content = "ИГРАТЬ СНОВА",
+                FontSize = 16,
+                Background = Brushes.Transparent,
+                BorderBrush = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                BorderThickness = new Thickness(2),
+                Foreground = (Brush)new BrushConverter().ConvertFrom("#D7D7D7"),
+                Margin = new Thickness(5),
+                Padding = new Thickness(15, 5, 15, 5),
+                Cursor = Cursors.Hand
+            };
+            playAgainButton.Click += (s, e) => { dialog.DialogResult = true; };
+            buttonPanel.Children.Add(playAgainButton);
+
+            var mainMenuButton = new Button()
+            {
+                Content = "ГЛАВНОЕ МЕНЮ",
+                FontSize = 16,
+                Background = Brushes.Transparent,
+                BorderBrush = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                BorderThickness = new Thickness(2),
+                Foreground = (Brush)new BrushConverter().ConvertFrom("#D7D7D7"),
+                Margin = new Thickness(5),
+                Padding = new Thickness(15, 5, 15, 5),
+                Cursor = Cursors.Hand
+            };
+            mainMenuButton.Click += (s, e) => { dialog.DialogResult = false; };
+            buttonPanel.Children.Add(mainMenuButton);
+
+            var exitButton = new Button()
+            {
+                Content = "ВЫЙТИ",
+                FontSize = 16,
+                Background = Brushes.Transparent,
+                BorderBrush = (Brush)new BrushConverter().ConvertFrom("#7E83F0"),
+                BorderThickness = new Thickness(2),
+                Foreground = (Brush)new BrushConverter().ConvertFrom("#D7D7D7"),
+                Margin = new Thickness(5),
+                Padding = new Thickness(15, 5, 15, 5),
+                Cursor = Cursors.Hand
+            };
+            exitButton.Click += (s, e) => { Application.Current.Shutdown(); };
+            buttonPanel.Children.Add(exitButton);
+
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                InitializeGame();
+            }
+            else if (result == false)
+            {
+                ReturnToMainMenu();
+            }
+        }
+
+        private void ReturnToMainMenu()
+        {
+            MainWindow mainWindow = new MainWindow();
+            mainWindow.Show();
+            this.Close();
+        }
+
+        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        {
+            ReturnToMainMenu();
+        }
+
+        private static void FindVisualChildren<T>(DependencyObject depObj, List<T> children) where T : DependencyObject
+        {
+            if (depObj != null)
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+                {
+                    DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+                    if (child != null && child is T)
+                    {
+                        children.Add((T)child);
+                    }
+                    FindVisualChildren(child, children);
+                }
+            }
+        }
+    }
+}
