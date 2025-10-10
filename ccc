@@ -1,1 +1,121 @@
+<ContentPage x:Class="ClockApp.AlarmPage"
+             Title="Будильник">
+    <StackLayout>
+        <TimePicker x:Name="tpTime" Format="HH:mm"/>
+        <Switch x:Name="swMonday" IsToggled="true"/>
+        <Switch x:Name="swTuesday" IsToggled="true"/>
+        <!-- Добавьте остальные дни недели -->
+        <Button x:Name="btnSetAlarm" Text="Установить будильник" Clicked="btnSetAlarm_Clicked"/>
+    </StackLayout>
+</ContentPage>
+public partial class AlarmPage : ContentPage
+{
+    TimeSpan _alarmTime;
+    IDispatcherTimer _timer;
+    
+    public AlarmPage()
+    {
+        InitializeComponent();
+        
+        _timer = Application.Current.Dispatcher.CreateTimer();
+        _timer.Interval = TimeSpan.FromSeconds(1);
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
+    }
+    
+    void btnSetAlarm_Clicked(object sender, EventArgs e)
+    {
+        _alarmTime = tpTime.Time;
+    }
+    
+    void Timer_Tick(object sender, EventArgs e)
+    {
+        DateTime now = DateTime.Now;
+        TimeSpan nowTime = new TimeSpan(now.Hour, now.Minute, 0);
+        
+        if (_alarmTime == nowTime)
+        {
+            if (CheckDayOfWeek(now.DayOfWeek))
+            {
+                DisplayAlert("Будильник", "Просыпайтесь!", "ОК");
+                SendNotification("Будильник", "Просыпайтесь!");
+            }
+        }
+    }
+    
+    bool CheckDayOfWeek(DayOfWeek day)
+    {
+        // Простая проверка для понедельника и вторника
+        if (day == DayOfWeek.Monday && swMonday.IsToggled) return true;
+        if (day == DayOfWeek.Tuesday && swTuesday.IsToggled) return true;
+        // Добавьте остальные дни
+        return false;
+    }
+    
+    async void SendNotification(string title, string message)
+    {
+        // Реализация пуш-уведомлений
+    }
+}
 
+<ContentPage x:Class="ClockApp.ReminderPage"
+             Title="Напоминалка">
+    <StackLayout>
+        <DatePicker x:Name="dpDate"/>
+        <TimePicker x:Name="tpTime"/>
+        <Entry x:Name="txtMessage" Placeholder="Сообщение напоминания"/>
+        <Button Text="Установить напоминание" Clicked="SetReminder_Clicked"/>
+    </StackLayout>
+</ContentPage>
+
+public partial class ReminderPage : ContentPage
+{
+    IDispatcherTimer _timer;
+    DateTime _reminderTime;
+    string _message;
+    
+    public ReminderPage()
+    {
+        InitializeComponent();
+        
+        _timer = Application.Current.Dispatcher.CreateTimer();
+        _timer.Interval = TimeSpan.FromSeconds(1);
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
+    }
+    
+    void SetReminder_Clicked(object sender, EventArgs e)
+    {
+        _reminderTime = dpDate.Date + tpTime.Time;
+        _message = txtMessage.Text;
+    }
+    
+    void Timer_Tick(object sender, EventArgs e)
+    {
+        if (DateTime.Now >= _reminderTime && !string.IsNullOrEmpty(_message))
+        {
+            DisplayAlert("Напоминание", _message, "OK");
+            SendNotification("Напоминание", _message);
+            _message = ""; // Сбрасываем сообщение
+        }
+    }
+    
+    async void SendNotification(string title, string message)
+    {
+        // Реализация пуш-уведомлений
+    }
+}
+
+builder.Services.AddSingleton<ILocalNotificationService, LocalNotificationService>();
+
+var request = new NotificationRequest
+{
+    NotificationId = 100,
+    Title = title,
+    Description = message,
+    Schedule = new NotificationRequestSchedule
+    {
+        NotifyTime = DateTime.Now.AddSeconds(1)
+    }
+};
+await LocalNotificationCenter.Current.Show(request);
