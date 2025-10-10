@@ -1,17 +1,181 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="ClockApp.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:ClockApp"
-    Title="ClockApp">
+namespace ClockApp;
 
-    <TabBar>
-        <ShellContent Title="Часы" ContentTemplate="{DataTemplate local:ClockPage}" Icon="clock.png" />
-        <ShellContent Title="Секундомер" ContentTemplate="{DataTemplate local:StopwatchPage}" Icon="stopwatch.png" />
-        <ShellContent Title="Таймер" ContentTemplate="{DataTemplate local:TimerPage}" Icon="timer.png" />
-        <ShellContent Title="Будильник" ContentTemplate="{DataTemplate local:AlarmPage}" Icon="alarm.png" />
-        <ShellContent Title="Напоминалка" ContentTemplate="{DataTemplate local:ReminderPage}" Icon="reminder.png" />
-    </TabBar>
+public partial class AlarmPage : ContentPage
+{
+    TimeSpan _alarmTime;
+    IDispatcherTimer _timer;
+    bool _alarmActive = false;
+    bool _alarmTriggered = false;
 
-</Shell>
+    public AlarmPage()
+    {
+        InitializeComponent();
+        
+        _timer = Application.Current.Dispatcher.CreateTimer();
+        _timer.Interval = TimeSpan.FromSeconds(1);
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
+    }
+    
+    void btnSetAlarm_Clicked(object sender, EventArgs e)
+    {
+        _alarmTime = tpTime.Time;
+        _alarmActive = true;
+        _alarmTriggered = false;
+        
+        DisplayAlert("Будильник", $"Будильник установлен на {_alarmTime:hh\\:mm}", "OK");
+    }
+    
+    async void Timer_Tick(object sender, EventArgs e)
+    {
+        if (!_alarmActive || _alarmTriggered) return;
+
+        DateTime now = DateTime.Now;
+        TimeSpan 
+
+
+
+напоминалка
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ClockApp.ReminderPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Напоминалка">
+    <StackLayout Padding="20">
+        <DatePicker x:Name="dpDate" Format="dd MMM yyyy"/>
+        <TimePicker x:Name="tpTime" Format="HH:mm"/>
+        <Entry x:Name="txtMessage" Placeholder="Сообщение напоминания"/>
+        <Button Text="Установить напоминание" Clicked="SetReminder_Clicked"/>
+    </StackLayout>
+</ContentPage>
+
+namespace ClockApp;
+
+public partial class ReminderPage : ContentPage
+{
+    IDispatcherTimer _timer;
+    DateTime _reminderTime;
+    string _message;
+    
+    public ReminderPage()
+    {
+        InitializeComponent();
+        
+        _timer = Application.Current.Dispatcher.CreateTimer();
+        _timer.Interval = TimeSpan.FromSeconds(1);
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
+    }
+    
+    void SetReminder_Clicked(object sender, EventArgs e)
+    {
+        _reminderTime = dpDate.Date + tpTime.Time;
+        _message = txtMessage.Text;
+        _timer.Start();
+    }
+    
+    async void Timer_Tick(object sender, EventArgs e)
+    {
+        if (DateTime.Now >= _reminderTime && !string.IsNullOrEmpty(_message))
+        {
+            DisplayAlert("Напоминание", _message, "OK");
+            
+            // Пуш-уведомление
+            var request = new NotificationRequest
+            {
+                NotificationId = 1000,
+                Title = "Напоминание", 
+                Description = _message,
+                Schedule = new NotificationRequestSchedule
+                {
+                    NotifyTime = DateTime.Now
+                }
+            };
+            await LocalNotificationCenter.Current.Show(request);
+            
+            _message = "";
+            _timer.Stop();
+        }
+    }
+}
+
+часы
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="ClockApp.AlarmPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Будильник">
+    <StackLayout Padding="20">
+        <TimePicker x:Name="tpTime" Format="HH:mm"/>
+        <Switch x:Name="swMonday" IsToggled="true"/>
+        <Switch x:Name="swTuesday" IsToggled="true"/>
+        <Switch x:Name="swWednesday" IsToggled="true"/>
+        <Switch x:Name="swThursday" IsToggled="true"/>
+        <Switch x:Name="swFriday" IsToggled="true"/>
+        <Switch x:Name="swSaturday" IsToggled="true"/>
+        <Switch x:Name="swSunday" IsToggled="true"/>
+        <Button x:Name="btnSetAlarm" Text="Установить будильник" Clicked="btnSetAlarm_Clicked"/>
+    </StackLayout>
+</ContentPage>
+
+namespace ClockApp;
+
+public partial class AlarmPage : ContentPage
+{
+    TimeSpan _alarmTime;
+    IDispatcherTimer _timer;
+    
+    public AlarmPage()
+    {
+        InitializeComponent();
+        
+        _timer = Application.Current.Dispatcher.CreateTimer();
+        _timer.Interval = TimeSpan.FromSeconds(1);
+        _timer.Tick += Timer_Tick;
+        _timer.Start();
+    }
+    
+    void btnSetAlarm_Clicked(object sender, EventArgs e)
+    {
+        _alarmTime = tpTime.Time;
+    }
+    
+    async void Timer_Tick(object sender, EventArgs e)
+    {
+        DateTime now = DateTime.Now;
+        TimeSpan nowTime = new TimeSpan(now.Hour, now.Minute, 0);
+        
+        if (_alarmTime == nowTime)
+        {
+            if (CheckDayOfWeek(now.DayOfWeek))
+            {
+                DisplayAlert("Будильник", "Просыпайтесь!", "ОК");
+                
+                // Пуш-уведомление
+                var request = new NotificationRequest
+                {
+                    NotificationId = 1001,
+                    Title = "Будильник",
+                    Description = "Просыпайтесь!",
+                    Schedule = new NotificationRequestSchedule
+                    {
+                        NotifyTime = DateTime.Now
+                    }
+                };
+                await LocalNotificationCenter.Current.Show(request);
+            }
+        }
+    }
+    
+    bool CheckDayOfWeek(DayOfWeek day)
+    {
+        if (day == DayOfWeek.Monday && swMonday.IsToggled) return true;
+        if (day == DayOfWeek.Tuesday && swTuesday.IsToggled) return true;
+        if (day == DayOfWeek.Wednesday && swWednesday.IsToggled) return true;
+        if (day == DayOfWeek.Thursday && swThursday.IsToggled) return true;
+        if (day == DayOfWeek.Friday && swFriday.IsToggled) return true;
+        if (day == DayOfWeek.Saturday && swSaturday.IsToggled) return true;
+        if (day == DayOfWeek.Sunday && swSunday.IsToggled) return true;
+        return false;
+    }
+}
