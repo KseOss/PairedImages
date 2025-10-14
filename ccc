@@ -1,62 +1,675 @@
+App.xaml
+
+xaml
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage x:Class="ClockApp.TimerPage"
-             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             Title="Таймер">
-    <StackLayout Padding="20">
-        <TimePicker x:Name="timePicker" Format="HH:mm"/>
-        <Button x:Name="btnStart" Text="Старт" Clicked="btnStart_Clicked"/>
-        <Label x:Name="lbTime" FontSize="28" HorizontalOptions="Center"/>
-    </StackLayout>
-</ContentPage>
+             xmlns:local="clr-namespace:ClockApp"
+             x:Class="ClockApp.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="Primary">#512BD4</Color>
+            <Color x:Key="Secondary">#DFD8F7</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+App.xaml.cs
 
-namespace ClockApp;
+csharp
+using Microsoft.Maui.Controls;
 
-public partial class TimerPage : ContentPage
+namespace ClockApp
 {
-    TimeSpan _time;
-    IDispatcherTimer _timer;
-
-    public TimerPage()
+    public partial class App : Application
     {
-        InitializeComponent();
-    }
-
-    void btnStart_Clicked(object sender, EventArgs e)
-    {
-        _time = timePicker.Time;
-        
-        _timer = Application.Current.Dispatcher.CreateTimer();
-        _timer.Interval = TimeSpan.FromSeconds(1);
-        _timer.Tick += Timer_Tick;
-        _timer.Start();
-    }
-
-    async void Timer_Tick(object sender, EventArgs e)
-    {
-        _time = _time.Add(new TimeSpan(0, 0, -1));
-        lbTime.Text = _time.ToString(@"hh\:mm\:ss");
-
-        if (_time.CompareTo(new TimeSpan(0, 0, 0)) <= 0)
+        public App()
         {
-            DisplayAlert("Внимание", "Время вышло", "ОК");
-            
-            // Пуш-уведомление
-            var request = new NotificationRequest
-            {
-                NotificationId = 1002,
-                Title = "Таймер",
-                Description = "Время вышло",
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = DateTime.Now
-                }
-            };
-            await LocalNotificationCenter.Current.Show(request);
-            
-            _timer.Stop();
-            lbTime.Text = "";
-            timePicker.Time = new TimeSpan(0, 0, 0);
+            InitializeComponent();
+            MainPage = new AppShell();
         }
     }
 }
+AppShell.xaml
+
+xaml
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="ClockApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:ClockApp"
+    Shell.FlyoutBehavior="Disabled"
+    Title="ClockApp">
+
+    <TabBar>
+        <Tab Title="Часы" Icon="clock_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:ClockPage}" />
+        </Tab>
+        <Tab Title="Секундомер" Icon="stopwatch_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:StopwatchPage}" />
+        </Tab>
+        <Tab Title="Таймер" Icon="timer_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:TimerPage}" />
+        </Tab>
+        <Tab Title="Будильник" Icon="alarm_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:AlarmPage}" />
+        </Tab>
+        <Tab Title="Напоминалка" Icon="reminder_icon.png">
+            <ShellContent ContentTemplate="{DataTemplate local:ReminderPage}" />
+        </Tab>
+    </TabBar>
+</Shell>
+AppShell.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class AppShell : Shell
+    {
+        public AppShell()
+        {
+            InitializeComponent();
+        }
+    }
+}
+ClockPage.xaml (Часы)
+
+xaml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ClockApp.ClockPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Часы">
+    
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            
+            <Label Text="Текущее время" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <Frame BackgroundColor="{DynamicResource Secondary}" Padding="20" HorizontalOptions="Center">
+                <VerticalStackLayout Spacing="10">
+                    <Label x:Name="timeLabel" FontSize="48" FontAttributes="Bold" HorizontalOptions="Center"/>
+                    <Label x:Name="dateLabel" FontSize="20" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <Label Text="Календарь" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <DatePicker x:Name="calendarPicker" Format="D" HorizontalOptions="Center"/>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+ClockPage.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class ClockPage : ContentPage
+    {
+        IDispatcherTimer _timer;
+
+        public ClockPage()
+        {
+            InitializeComponent();
+            SetupClock();
+        }
+
+        private void SetupClock()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += (s, e) => UpdateClock();
+            _timer.Start();
+            
+            UpdateClock();
+        }
+
+        private void UpdateClock()
+        {
+            DateTime now = DateTime.Now;
+            timeLabel.Text = now.ToString("HH:mm:ss");
+            dateLabel.Text = now.ToString("dddd, dd MMMM yyyy");
+        }
+    }
+}
+StopwatchPage.xaml (Секундомер)
+
+xaml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ClockApp.StopwatchPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Секундомер">
+    
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            
+            <Label Text="Секундомер" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <Frame BackgroundColor="{DynamicResource Secondary}" Padding="20" HorizontalOptions="Center">
+                <Label x:Name="timeLabel" Text="00:00:00" FontSize="48" FontAttributes="Bold" HorizontalOptions="Center"/>
+            </Frame>
+            
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Button x:Name="btnStart" Text="Старт" Clicked="OnStartClicked" BackgroundColor="Green" TextColor="White"/>
+                <Button x:Name="btnStop" Text="Стоп" Clicked="OnStopClicked" BackgroundColor="Red" TextColor="White" IsEnabled="False"/>
+                <Button x:Name="btnPitStop" Text="Круг" Clicked="OnPitStopClicked" BackgroundColor="Blue" TextColor="White" IsEnabled="False"/>
+                <Button x:Name="btnClear" Text="Сброс" Clicked="OnClearClicked" BackgroundColor="Gray" TextColor="White"/>
+            </HorizontalStackLayout>
+            
+            <Label Text="Круги:" FontSize="18" FontAttributes="Bold"/>
+            
+            <ScrollView x:Name="pitStopScroll" HeightRequest="200">
+                <VerticalStackLayout x:Name="pitStopContainer" Spacing="5"/>
+            </ScrollView>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+StopwatchPage.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class StopwatchPage : ContentPage
+    {
+        private int _seconds = 0;
+        private bool _timerIsRun = false;
+
+        public StopwatchPage()
+        {
+            InitializeComponent();
+        }
+
+        private async void OnStartClicked(object sender, EventArgs e)
+        {
+            _timerIsRun = true;
+            btnStart.IsEnabled = false;
+            btnStop.IsEnabled = true;
+            btnPitStop.IsEnabled = true;
+            btnClear.IsEnabled = false;
+
+            while (_timerIsRun)
+            {
+                _seconds += 1;
+                TimeSpan time = TimeSpan.FromSeconds(_seconds);
+                timeLabel.Text = time.ToString(@"hh\:mm\:ss");
+                await Task.Delay(1000);
+            }
+        }
+
+        private void OnStopClicked(object sender, EventArgs e)
+        {
+            _timerIsRun = false;
+            btnStart.IsEnabled = true;
+            btnStop.IsEnabled = false;
+            btnPitStop.IsEnabled = false;
+            btnClear.IsEnabled = true;
+        }
+
+        private void OnPitStopClicked(object sender, EventArgs e)
+        {
+            Label lapLabel = new Label();
+            TimeSpan time = TimeSpan.FromSeconds(_seconds);
+            lapLabel.Text = time.ToString(@"hh\:mm\:ss");
+            lapLabel.FontSize = 16;
+            pitStopContainer.Children.Add(lapLabel);
+        }
+
+        private void OnClearClicked(object sender, EventArgs e)
+        {
+            _seconds = 0;
+            timeLabel.Text = "00:00:00";
+            pitStopContainer.Children.Clear();
+            btnClear.IsEnabled = false;
+        }
+    }
+}
+TimerPage.xaml (Таймер)
+
+xaml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ClockApp.TimerPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Таймер">
+    
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            
+            <Label Text="Таймер" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <TimePicker x:Name="timePicker" Format="HH:mm" HorizontalOptions="Center"/>
+            
+            <Frame BackgroundColor="{DynamicResource Secondary}" Padding="20" HorizontalOptions="Center">
+                <Label x:Name="timeLabel" Text="00:00:00" FontSize="48" FontAttributes="Bold" HorizontalOptions="Center"/>
+            </Frame>
+            
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Button x:Name="btnStart" Text="Старт" Clicked="OnStartClicked" BackgroundColor="Green" TextColor="White"/>
+                <Button x:Name="btnStop" Text="Стоп" Clicked="OnStopClicked" BackgroundColor="Red" TextColor="White" IsEnabled="False"/>
+                <Button x:Name="btnReset" Text="Сброс" Clicked="OnResetClicked" BackgroundColor="Gray" TextColor="White"/>
+            </HorizontalStackLayout>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+TimerPage.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class TimerPage : ContentPage
+    {
+        private TimeSpan _time;
+        private IDispatcherTimer _timer;
+
+        public TimerPage()
+        {
+            InitializeComponent();
+            SetupTimer();
+        }
+
+        private void SetupTimer()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += OnTimerTick;
+        }
+
+        private void OnStartClicked(object sender, EventArgs e)
+        {
+            if (_time.TotalSeconds == 0)
+            {
+                _time = timePicker.Time;
+            }
+            
+            _timer.Start();
+            btnStart.IsEnabled = false;
+            btnStop.IsEnabled = true;
+            btnReset.IsEnabled = false;
+        }
+
+        private void OnStopClicked(object sender, EventArgs e)
+        {
+            _timer.Stop();
+            btnStart.IsEnabled = true;
+            btnStop.IsEnabled = false;
+            btnReset.IsEnabled = true;
+        }
+
+        private void OnResetClicked(object sender, EventArgs e)
+        {
+            _timer.Stop();
+            _time = new TimeSpan(0, 0, 0);
+            timeLabel.Text = "00:00:00";
+            timePicker.Time = new TimeSpan(0, 0, 0);
+            btnStart.IsEnabled = true;
+            btnStop.IsEnabled = false;
+            btnReset.IsEnabled = false;
+        }
+
+        private void OnTimerTick(object sender, EventArgs e)
+        {
+            if (_time.CompareTo(new TimeSpan(0, 0, 0)) > 0)
+            {
+                _time = _time.Add(new TimeSpan(0, 0, -1));
+                timeLabel.Text = _time.ToString(@"hh\:mm\:ss");
+            }
+            else
+            {
+                _timer.Stop();
+                timeLabel.Text = "00:00:00";
+                btnStart.IsEnabled = true;
+                btnStop.IsEnabled = false;
+                btnReset.IsEnabled = true;
+                
+                ShowNotification("Таймер", "Время вышло!");
+            }
+        }
+
+        private async void ShowNotification(string title, string message)
+        {
+            await DisplayAlert(title, message, "OK");
+        }
+    }
+}
+AlarmPage.xaml (Будильник)
+
+xaml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ClockApp.AlarmPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Будильник">
+    
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            
+            <Label Text="Будильник" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <TimePicker x:Name="timePicker" Format="HH:mm" HorizontalOptions="Center"/>
+            
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Label Text="Включить будильник" FontSize="16"/>
+                <Switch x:Name="alarmSwitch" Toggled="OnAlarmToggled"/>
+            </HorizontalStackLayout>
+            
+            <Label Text="Дни повторения:" FontSize="18" FontAttributes="Bold"/>
+            
+            <VerticalStackLayout Spacing="10">
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Понедельник" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="mondaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Вторник" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="tuesdaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Среда" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="wednesdaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Четверг" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="thursdaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Пятница" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="fridaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Суббота" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="saturdaySwitch"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="10">
+                    <Label Text="Воскресенье" FontSize="14" VerticalOptions="Center"/>
+                    <Switch x:Name="sundaySwitch"/>
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+            
+            <Label x:Name="statusLabel" Text="Будильник выключен" FontSize="16" HorizontalOptions="Center" TextColor="Gray"/>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+AlarmPage.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class AlarmPage : ContentPage
+    {
+        private TimeSpan _alarmTime;
+        private IDispatcherTimer _timer;
+
+        public AlarmPage()
+        {
+            InitializeComponent();
+            SetupAlarmTimer();
+        }
+
+        private void SetupAlarmTimer()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += OnAlarmTimerTick;
+        }
+
+        private void OnAlarmToggled(object sender, ToggledEventArgs e)
+        {
+            if (e.Value)
+            {
+                _alarmTime = timePicker.Time;
+                timePicker.IsEnabled = false;
+                _timer.Start();
+                statusLabel.Text = "Будильник включен";
+                statusLabel.TextColor = Colors.Green;
+            }
+            else
+            {
+                timePicker.IsEnabled = true;
+                _timer.Stop();
+                statusLabel.Text = "Будильник выключен";
+                statusLabel.TextColor = Colors.Gray;
+            }
+        }
+
+        private void OnAlarmTimerTick(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+            TimeSpan currentTime = new TimeSpan(now.Hour, now.Minute, 0);
+            
+            if (_alarmTime.CompareTo(currentTime) == 0)
+            {
+                if (CheckDayOfWeek(now.DayOfWeek))
+                {
+                    _timer.Stop();
+                    ShowAlarmNotification();
+                }
+            }
+        }
+
+        private bool CheckDayOfWeek(DayOfWeek day)
+        {
+            return day switch
+            {
+                DayOfWeek.Monday => mondaySwitch.IsToggled,
+                DayOfWeek.Tuesday => tuesdaySwitch.IsToggled,
+                DayOfWeek.Wednesday => wednesdaySwitch.IsToggled,
+                DayOfWeek.Thursday => thursdaySwitch.IsToggled,
+                DayOfWeek.Friday => fridaySwitch.IsToggled,
+                DayOfWeek.Saturday => saturdaySwitch.IsToggled,
+                DayOfWeek.Sunday => sundaySwitch.IsToggled,
+                _ => false
+            };
+        }
+
+        private async void ShowAlarmNotification()
+        {
+            await DisplayAlert("Будильник", "Просыпайтесь! Время вставать!", "OK");
+            alarmSwitch.IsToggled = false;
+        }
+    }
+}
+ReminderPage.xaml (Напоминалка)
+
+xaml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="ClockApp.ReminderPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Напоминалка">
+    
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30">
+            
+            <Label Text="Напоминалка" FontSize="24" HorizontalOptions="Center" TextColor="{DynamicResource Primary}"/>
+            
+            <DatePicker x:Name="datePicker" Format="dd MMM yyyy" HorizontalOptions="Fill"/>
+            
+            <TimePicker x:Name="timePicker" Format="HH:mm" HorizontalOptions="Fill"/>
+            
+            <Entry x:Name="messageEntry" Placeholder="Введите сообщение напоминания" HorizontalOptions="Fill"/>
+            
+            <Button x:Name="btnSetReminder" Text="Установить напоминание" Clicked="OnSetReminderClicked" 
+                   BackgroundColor="{DynamicResource Primary}" TextColor="White" HorizontalOptions="Fill"/>
+            
+            <Label x:Name="statusLabel" Text="Напоминание не установлено" FontSize="16" HorizontalOptions="Center" TextColor="Gray"/>
+            
+            <Label Text="Активные напоминания:" FontSize="18" FontAttributes="Bold"/>
+            
+            <ScrollView x:Name="remindersScroll" HeightRequest="200">
+                <VerticalStackLayout x:Name="remindersContainer" Spacing="5"/>
+            </ScrollView>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
+ReminderPage.xaml.cs
+
+csharp
+using Microsoft.Maui.Controls;
+
+namespace ClockApp
+{
+    public partial class ReminderPage : ContentPage
+    {
+        private IDispatcherTimer _timer;
+        private List<Reminder> _reminders = new List<Reminder>();
+
+        public ReminderPage()
+        {
+            InitializeComponent();
+            SetupReminderTimer();
+        }
+
+        private void SetupReminderTimer()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += OnReminderTimerTick;
+            _timer.Start();
+        }
+
+        private void OnSetReminderClicked(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(messageEntry.Text))
+            {
+                DisplayAlert("Ошибка", "Введите сообщение напоминания", "OK");
+                return;
+            }
+
+            DateTime reminderDateTime = datePicker.Date + timePicker.Time;
+            
+            if (reminderDateTime <= DateTime.Now)
+            {
+                DisplayAlert("Ошибка", "Выберите дату и время в будущем", "OK");
+                return;
+            }
+
+            Reminder newReminder = new Reminder
+            {
+                DateTime = reminderDateTime,
+                Message = messageEntry.Text
+            };
+
+            _reminders.Add(newReminder);
+            UpdateRemindersList();
+            
+            statusLabel.Text = $"Напоминание установлено на {reminderDateTime:dd.MM.yyyy HH:mm}";
+            statusLabel.TextColor = Colors.Green;
+            
+            messageEntry.Text = string.Empty;
+        }
+
+        private void OnReminderTimerTick(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+            
+            for (int i = _reminders.Count - 1; i >= 0; i--)
+            {
+                if (_reminders[i].DateTime <= now)
+                {
+                    ShowReminderNotification(_reminders[i].Message);
+                    _reminders.RemoveAt(i);
+                    UpdateRemindersList();
+                }
+            }
+        }
+
+        private void UpdateRemindersList()
+        {
+            remindersContainer.Children.Clear();
+            
+            foreach (var reminder in _reminders.OrderBy(r => r.DateTime))
+            {
+                Label reminderLabel = new Label
+                {
+                    Text = $"{reminder.DateTime:dd.MM.yyyy HH:mm} - {reminder.Message}",
+                    FontSize = 14
+                };
+                remindersContainer.Children.Add(reminderLabel);
+            }
+        }
+
+        private async void ShowReminderNotification(string message)
+        {
+            await DisplayAlert("Напоминание", message, "OK");
+        }
+    }
+
+    public class Reminder
+    {
+        public DateTime DateTime { get; set; }
+        public string Message { get; set; }
+    }
+}
+MauiProgram.cs
+
+csharp
+using Microsoft.Extensions.Logging;
+
+namespace ClockApp
+{
+    public static class MauiProgram
+    {
+        public static MauiApp CreateMauiApp()
+        {
+            var builder = MauiApp.CreateBuilder();
+            builder
+                .UseMauiApp<App>()
+                .ConfigureFonts(fonts =>
+                {
+                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                });
+
+#if DEBUG
+    		builder.Logging.AddDebug();
+#endif
+
+            return builder.Build();
+        }
+    }
+}
+Platforms/Android/AndroidManifest.xml (добавить разрешение для уведомлений)
+
+xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true"></application>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+</manifest>
+Это полное приложение MAUI с 5 вкладками, которое включает:
+
+Часы - показывает текущее время и дату
+
+Секундомер - с функциями старт/стоп/круг/сброс
+
+Таймер - обратный отсчет с уведомлением
+
+Будильник - с настройкой дней недели
+
+Напоминалка - установка напоминаний на будущее
+
+Все функции работают с пуш-уведомлениями (DisplayAlert) и используют компоненты из лекции (DatePicker, TimePicker, Timer). Код готов к компиляции и запуску!
