@@ -1,98 +1,53 @@
-using Microsoft.Maui.Controls;
+using Microsoft.Maui.ApplicationModel.Communication;
+using Microsoft.Maui.ApplicationModel;
 
 namespace PR6_MAUI
 {
-    public partial class AlarmPage : ContentPage
+    public static class NotificationService
     {
-        private TimeSpan _alarmTime;
-        private IDispatcherTimer _timer;
-        private bool _alarmTriggered = false;
-
-        public AlarmPage()
+        public static async Task ShowNotification(string title, string message)
         {
-            InitializeComponent();
-            SetupAlarmTimer();
-        }
-
-        private void SetupAlarmTimer()
-        {
-            _timer = Application.Current.Dispatcher.CreateTimer();
-            _timer.Interval = TimeSpan.FromSeconds(1);
-            _timer.Tick += OnAlarmTimerTick;
-        }
-
-        private void OnAlarmToggled(object sender, ToggledEventArgs e)
-        {
-            if (e.Value)
+            // Для Android
+            if (DeviceInfo.Platform == DevicePlatform.Android)
             {
-                _alarmTime = timePicker.Time;
-                timePicker.IsEnabled = false;
-                _alarmTriggered = false;
-                _timer.Start();
-                statusLabel.Text = "Будильник включен";
-                statusLabel.TextColor = Colors.Green;
+                // Встроенное уведомление MAUI
+                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+                
+                // Дополнительно: вибрация
+                try
+                {
+                    Vibration.Default.Vibrate(TimeSpan.FromSeconds(1));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Vibration error: {ex.Message}");
+                }
             }
+            // Для Windows
+            else if (DeviceInfo.Platform == DevicePlatform.WinUI)
+            {
+                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+            }
+            // Для iOS/MacCatalyst
             else
             {
-                timePicker.IsEnabled = true;
-                _timer.Stop();
-                statusLabel.Text = "Будильник выключен";
-                statusLabel.TextColor = Colors.Gray;
+                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
             }
         }
 
-        private async void OnAlarmTimerTick(object sender, EventArgs e)
+        public static async Task ShowPersistentNotification(string title, string message)
         {
-            DateTime now = DateTime.Now;
-            TimeSpan currentTime = new TimeSpan(now.Hour, now.Minute, now.Second);
-
-            // Проверяем с точностью до секунды для надежности
-            if (Math.Abs(_alarmTime.TotalMinutes - currentTime.TotalMinutes) < 1 && 
-                !_alarmTriggered && CheckDayOfWeek(now.DayOfWeek))
-            {
-                _alarmTriggered = true;
-                _timer.Stop();
-                await ShowAlarmNotification();
-            }
-        }
-
-        private bool CheckDayOfWeek(DayOfWeek day)
-        {
-            return day switch
-            {
-                DayOfWeek.Monday => mondaySwitch.IsToggled,
-                DayOfWeek.Tuesday => tuesdaySwitch.IsToggled,
-                DayOfWeek.Wednesday => wednesdaySwitch.IsToggled,
-                DayOfWeek.Thursday => thursdaySwitch.IsToggled,
-                DayOfWeek.Friday => fridaySwitch.IsToggled,
-                DayOfWeek.Saturday => saturdaySwitch.IsToggled,
-                DayOfWeek.Sunday => sundaySwitch.IsToggled,
-                _ => false
-            };
-        }
-
-        private async Task ShowAlarmNotification()
-        {
-            // Используем наш сервис уведомлений
-            await NotificationService.ShowNotification("Будильник", "Просыпайтесь! Время вставать!");
+            // Альтернатива: использовать диалоговое окно, которое требует действия пользователя
+            bool result = await Application.Current.MainPage.DisplayAlert(
+                title, 
+                message, 
+                "OK", 
+                "Отмена");
             
-            // Дополнительно: повторяем уведомление пока пользователь не отключит
-            bool stopAlarm = await Application.Current.MainPage.DisplayAlert(
-                "Будильник", 
-                "Просыпайтесь! Время вставать!", 
-                "Отключить", 
-                "Повторить через 1 мин");
-            
-            if (!stopAlarm)
+            if (result)
             {
-                // Повторить через 1 минуту
-                _alarmTime = _alarmTime.Add(TimeSpan.FromMinutes(1));
-                _alarmTriggered = false;
-                _timer.Start();
-            }
-            else
-            {
-                alarmSwitch.IsToggled = false;
+                // Действие при нажатии OK
+                Console.WriteLine("User confirmed notification");
             }
         }
     }
