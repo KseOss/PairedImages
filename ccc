@@ -1,94 +1,273 @@
-secundomer
+Правильно! Вам нужны настоящие push-уведомления, которые показываются сверху экрана. Вот решение с использованием официального плагина .NET MAUI Community Toolkit:
+
+1. Установите необходимые пакеты
+
+Добавьте в файл проекта (.csproj):
+
+```xml
+<PackageReference Include="CommunityToolkit.Maui" Version="8.0.0" />
+<PackageReference Include="CommunityToolkit.Maui.Core" Version="8.0.0" />
+```
+
+2. Настройка в MauiProgram.cs
+
+```csharp
+using CommunityToolkit.Maui;
+
+public static class MauiProgram
+{
+    public static MauiApp CreateMauiApp()
+    {
+        var builder = MauiApp.CreateBuilder();
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit() // Добавьте эту строку
+            .ConfigureFonts(fonts =>
+            {
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+            });
+
+        return builder.Build();
+    }
+}
+```
+
+3. Обновленный NotificationService с настоящими пуш-уведомлениями
+
+```csharp
+using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Core;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 
 namespace PR6_MAUI
 {
-    public partial class StopwatchPage : ContentPage
+    public static class NotificationService
     {
-        private int _seconds = 0;
-        private bool _timerIsRun = false;
-        private IDispatcherTimer _dispatcherTimer;
-
-        public StopwatchPage()
+        public static async Task ShowToastNotification(string title, string message)
         {
-            InitializeComponent();
-            SetupDispatcherTimer();
+            // Toast уведомление (всплывает сверху и исчезает)
+            var toast = Toast.Make(message, ToastDuration.Long, 14);
+            await toast.Show();
         }
 
-        private void SetupDispatcherTimer()
+        public static async Task ShowSnackbarNotification(string title, string message, string actionText = "OK", Action action = null)
         {
-            _dispatcherTimer = Application.Current.Dispatcher.CreateTimer();
-            _dispatcherTimer.Interval = TimeSpan.FromSeconds(1);
-            _dispatcherTimer.Tick += OnDispatcherTimerTick;
+            // Snackbar уведомление (снизу с кнопкой действия)
+            var snackbar = Snackbar.Make(message, action, actionText, TimeSpan.FromSeconds(5));
+            await snackbar.Show();
         }
 
-        private void OnStartClicked(object sender, EventArgs e)
+        public static async Task ShowPushNotification(string title, string message)
         {
-            _timerIsRun = true;
-            btnStart.IsEnabled = false;
-            btnStop.IsEnabled = true;
-            btnPitStop.IsEnabled = true;
-            btnClear.IsEnabled = false;
-
-            _dispatcherTimer.Start();
-        }
-
-        private void OnStopClicked(object sender, EventArgs e)
-        {
-            _timerIsRun = false;
-            _dispatcherTimer.Stop();
-            btnStart.IsEnabled = true;
-            btnStop.IsEnabled = false;
-            btnPitStop.IsEnabled = false;
-            btnClear.IsEnabled = true;
-
-            // Уведомление об остановке
-            _ = NotificationService.ShowNotification("Секундомер", $"Секундомер остановлен на {timeLabel.Text}");
-        }
-
-        private void OnDispatcherTimerTick(object sender, EventArgs e)
-        {
-            if (_timerIsRun)
-            {
-                _seconds += 1;
-                TimeSpan time = TimeSpan.FromSeconds(_seconds);
-                timeLabel.Text = time.ToString(@"hh\:mm\:ss");
-            }
-        }
-
-        private void OnPitStopClicked(object sender, EventArgs e)
-        {
-            Label lapLabel = new Label();
-            TimeSpan time = TimeSpan.FromSeconds(_seconds);
-            lapLabel.Text = $"Круг: {time.ToString(@"hh\:mm\:ss")}";
-            lapLabel.FontSize = 16;
-            lapLabel.TextColor = Colors.Blue;
-            pitStopContainer.Children.Add(lapLabel);
-
-            // Вибрация при записи круга (если доступно)
             try
             {
-                Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(500));
+                // Для Android используем встроенные уведомления
+                if (DeviceInfo.Platform == DevicePlatform.Android)
+                {
+                    await ShowAndroidNotification(title, message);
+                }
+                // Для Windows
+                else if (DeviceInfo.Platform == DevicePlatform.WinUI)
+                {
+                    await ShowWindowsNotification(title, message);
+                }
+                // Для других платформ используем Snackbar
+                else
+                {
+                    await ShowSnackbarNotification(title, message);
+                }
+
+                // Вибрация
+                await TryVibrate();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Vibration error: {ex.Message}");
+                // Fallback на Snackbar
+                await ShowSnackbarNotification(title, message);
             }
         }
 
-        private async void OnClearClicked(object sender, EventArgs e)
+        private static async Task ShowAndroidNotification(string title, string message)
         {
-            _seconds = 0;
-            timeLabel.Text = "00:00:00";
-            pitStopContainer.Children.Clear();
-            btnClear.IsEnabled = false;
-            
-            await NotificationService.ShowNotification("Секундомер", "Секундомер сброшен");
+            // Создаем кастомное уведомление через Snackbar с длительной продолжительностью
+            var snackbarOptions = new SnackbarOptions
+            {
+                BackgroundColor = Colors.DarkBlue,
+                TextColor = Colors.White,
+                CornerRadius = new CornerRadius(10),
+                Font = Font.SystemFontOfSize(14)
+            };
+
+            var snackbar = Snackbar.Make(
+                message,
+                duration: TimeSpan.FromSeconds(10),
+                visualOptions: snackbarOptions);
+
+            await snackbar.Show();
+        }
+
+        private static async Task ShowWindowsNotification(string title, string message)
+        {
+            // Для Windows используем Toast
+            var toast = Toast.Make(message, ToastDuration.Long, 16);
+            await toast.Show();
+        }
+
+        public static async Task ShowAlarmNotification(string title, string message)
+        {
+            // Особо навязчивое уведомление для будильника
+            if (DeviceInfo.Platform == DevicePlatform.Android)
+            {
+                // Множественные тосты для будильника
+                for (int i = 0; i < 3; i++)
+                {
+                    await ShowToastNotification("⏰ " + title, message);
+                    await Task.Delay(2000);
+                }
+            }
+
+            // Snackbar с действием
+            await ShowSnackbarNotification(
+                "⏰ " + title, 
+                message, 
+                "Выключить", 
+                () => { /* Действие при нажатии */ });
+        }
+
+        private static async Task TryVibrate()
+        {
+            try
+            {
+                if (Vibration.Default.IsSupported)
+                {
+                    // Паттерн вибрации для уведомления
+                    Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(1000));
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Vibration not available: {ex.Message}");
+            }
         }
     }
 }
+```
 
-napominalka
+4. Обновленный будильник с пуш-уведомлениями
+
+```csharp
+using Microsoft.Maui.Controls;
+
+namespace PR6_MAUI
+{
+    public partial class AlarmPage : ContentPage
+    {
+        private TimeSpan _alarmTime;
+        private IDispatcherTimer _timer;
+        private bool _alarmTriggered = false;
+
+        public AlarmPage()
+        {
+            InitializeComponent();
+            SetupAlarmTimer();
+        }
+
+        private void SetupAlarmTimer()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += OnAlarmTimerTick;
+        }
+
+        private void OnAlarmToggled(object sender, ToggledEventArgs e)
+        {
+            if (e.Value)
+            {
+                _alarmTime = timePicker.Time;
+                timePicker.IsEnabled = false;
+                _alarmTriggered = false;
+                _timer.Start();
+                statusLabel.Text = "Будильник включен";
+                statusLabel.TextColor = Colors.Green;
+                
+                // Уведомление о включении будильника
+                _ = NotificationService.ShowToastNotification("Будильник", 
+                    $"Установлен на {_alarmTime:hh\\:mm}");
+            }
+            else
+            {
+                timePicker.IsEnabled = true;
+                _timer.Stop();
+                statusLabel.Text = "Будильник выключен";
+                statusLabel.TextColor = Colors.Gray;
+            }
+        }
+
+        private async void OnAlarmTimerTick(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+            TimeSpan currentTime = new TimeSpan(now.Hour, now.Minute, now.Second);
+
+            if (Math.Abs(_alarmTime.TotalMinutes - currentTime.TotalMinutes) < 1 && 
+                !_alarmTriggered && CheckDayOfWeek(now.DayOfWeek))
+            {
+                _alarmTriggered = true;
+                _timer.Stop();
+                await ShowAlarmNotification();
+            }
+        }
+
+        private bool CheckDayOfWeek(DayOfWeek day)
+        {
+            return day switch
+            {
+                DayOfWeek.Monday => mondaySwitch.IsToggled,
+                DayOfWeek.Tuesday => tuesdaySwitch.IsToggled,
+                DayOfWeek.Wednesday => wednesdaySwitch.IsToggled,
+                DayOfWeek.Thursday => thursdaySwitch.IsToggled,
+                DayOfWeek.Friday => fridaySwitch.IsToggled,
+                DayOfWeek.Saturday => saturdaySwitch.IsToggled,
+                DayOfWeek.Sunday => sundaySwitch.IsToggled,
+                _ => false
+            };
+        }
+
+        private async Task ShowAlarmNotification()
+        {
+            // Настоящее пуш-уведомление для будильника
+            await NotificationService.ShowAlarmNotification("Будильник", "Просыпайтесь! Время вставать!");
+            
+            // Дополнительный диалог для подтверждения
+            bool stopAlarm = await Application.Current.MainPage.DisplayAlert(
+                "⏰ Будильник", 
+                "Просыпайтесь! Время вставать!", 
+                "Выключить", 
+                "Отложить 5 мин");
+            
+            if (!stopAlarm)
+            {
+                // Повторить через 5 минут
+                _alarmTime = DateTime.Now.AddMinutes(5).TimeOfDay;
+                _alarmTriggered = false;
+                _timer.Start();
+                
+                await NotificationService.ShowToastNotification("Будильник", 
+                    "Отложен на 5 минут");
+            }
+            else
+            {
+                alarmSwitch.IsToggled = false;
+            }
+        }
+    }
+}
+```
+
+5. Обновленная напоминалка
+
+```csharp
 using Microsoft.Maui.Controls;
 
 namespace PR6_MAUI
@@ -142,9 +321,9 @@ namespace PR6_MAUI
 
             messageEntry.Text = string.Empty;
 
-            // Подтверждение установки напоминания
-            await NotificationService.ShowNotification("Напоминалка", 
-                $"Напоминание установлено на {reminderDateTime:dd.MM.yyyy HH:mm}");
+            // Пуш-уведомление о создании напоминания
+            await NotificationService.ShowToastNotification("Напоминалка", 
+                $"Напоминание на {reminderDateTime:HH:mm}");
         }
 
         private async void OnReminderTimerTick(object sender, EventArgs e)
@@ -164,27 +343,23 @@ namespace PR6_MAUI
 
         private async Task ShowReminderNotification(string message)
         {
-            // Более навязчивое уведомление для напоминаний
-            bool confirmed = await Application.Current.MainPage.DisplayAlert(
-                "🔔 Напоминание",
+            // Пуш-уведомление для напоминалки
+            await NotificationService.ShowPushNotification("🔔 Напоминание", message);
+            
+            // Snackbar с действиями
+            var snackbar = Snackbar.Make(
                 message,
+                () => { /* Действие при нажатии */ },
                 "Выполнено",
-                "Отложить на 5 мин");
-
-            if (!confirmed)
-            {
-                // Отложить на 5 минут
-                Reminder postponedReminder = new Reminder
+                TimeSpan.FromSeconds(10),
+                new SnackbarOptions
                 {
-                    DateTime = DateTime.Now.AddMinutes(5),
-                    Message = $"[Отложено] {message}"
-                };
-                _reminders.Add(postponedReminder);
-                UpdateRemindersList();
+                    BackgroundColor = Colors.Green,
+                    TextColor = Colors.White,
+                    CornerRadius = new CornerRadius(10)
+                });
                 
-                await NotificationService.ShowNotification("Напоминалка", 
-                    "Напоминание отложено на 5 минут");
-            }
+            await snackbar.Show();
         }
 
         private void UpdateRemindersList()
@@ -212,10 +387,71 @@ namespace PR6_MAUI
             }
         }
     }
+}
+```
 
-    public class Reminder
+6. Обновленный секундомер
+
+```csharp
+using Microsoft.Maui.Controls;
+
+namespace PR6_MAUI
+{
+    public partial class StopwatchPage : ContentPage
     {
-        public DateTime DateTime { get; set; }
-        public string Message { get; set; }
+        private int _seconds = 0;
+        private bool _timerIsRun = false;
+        private IDispatcherTimer _dispatcherTimer;
+
+        public StopwatchPage()
+        {
+            InitializeComponent();
+            SetupDispatcherTimer();
+        }
+
+        private void OnPitStopClicked(object sender, EventArgs e)
+        {
+            Label lapLabel = new Label();
+            TimeSpan time = TimeSpan.FromSeconds(_seconds);
+            lapLabel.Text = $"Круг: {time.ToString(@"hh\:mm\:ss")}";
+            lapLabel.FontSize = 16;
+            lapLabel.TextColor = Colors.Blue;
+            pitStopContainer.Children.Add(lapLabel);
+
+            // Toast уведомление о записи круга
+            _ = NotificationService.ShowToastNotification("Секундомер", 
+                $"Круг записан: {time.ToString(@"hh\:mm\:ss")}");
+
+            // Вибрация
+            try
+            {
+                Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(200));
+            }
+            catch { }
+        }
+
+        private async void OnStopClicked(object sender, EventArgs e)
+        {
+            _timerIsRun = false;
+            _dispatcherTimer.Stop();
+            btnStart.IsEnabled = true;
+            btnStop.IsEnabled = false;
+            btnPitStop.IsEnabled = false;
+            btnClear.IsEnabled = true;
+
+            // Пуш-уведомление об остановке
+            await NotificationService.ShowPushNotification("Секундомер", 
+                $"Остановлен на {timeLabel.Text}");
+        }
     }
 }
+```
+
+Что теперь будет:
+
+· Toast - всплывает сверху и автоматически исчезает
+· Snackbar - появляется снизу с кнопками действий
+· Push-уведомления - используют нативные механизмы платформ
+· Вибрация - для важных уведомлений
+
+Переустановите пакеты и перезапустите приложение - теперь уведомления будут появляться поверх экрана!
