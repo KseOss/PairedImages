@@ -1,54 +1,221 @@
-using Microsoft.Maui.ApplicationModel.Communication;
-using Microsoft.Maui.ApplicationModel;
+secundomer
+using Microsoft.Maui.Controls;
 
 namespace PR6_MAUI
 {
-    public static class NotificationService
+    public partial class StopwatchPage : ContentPage
     {
-        public static async Task ShowNotification(string title, string message)
+        private int _seconds = 0;
+        private bool _timerIsRun = false;
+        private IDispatcherTimer _dispatcherTimer;
+
+        public StopwatchPage()
         {
-            // Для Android
-            if (DeviceInfo.Platform == DevicePlatform.Android)
+            InitializeComponent();
+            SetupDispatcherTimer();
+        }
+
+        private void SetupDispatcherTimer()
+        {
+            _dispatcherTimer = Application.Current.Dispatcher.CreateTimer();
+            _dispatcherTimer.Interval = TimeSpan.FromSeconds(1);
+            _dispatcherTimer.Tick += OnDispatcherTimerTick;
+        }
+
+        private void OnStartClicked(object sender, EventArgs e)
+        {
+            _timerIsRun = true;
+            btnStart.IsEnabled = false;
+            btnStop.IsEnabled = true;
+            btnPitStop.IsEnabled = true;
+            btnClear.IsEnabled = false;
+
+            _dispatcherTimer.Start();
+        }
+
+        private void OnStopClicked(object sender, EventArgs e)
+        {
+            _timerIsRun = false;
+            _dispatcherTimer.Stop();
+            btnStart.IsEnabled = true;
+            btnStop.IsEnabled = false;
+            btnPitStop.IsEnabled = false;
+            btnClear.IsEnabled = true;
+
+            // Уведомление об остановке
+            _ = NotificationService.ShowNotification("Секундомер", $"Секундомер остановлен на {timeLabel.Text}");
+        }
+
+        private void OnDispatcherTimerTick(object sender, EventArgs e)
+        {
+            if (_timerIsRun)
             {
-                // Встроенное уведомление MAUI
-                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-                
-                // Дополнительно: вибрация
-                try
-                {
-                    Vibration.Default.Vibrate(TimeSpan.FromSeconds(1));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Vibration error: {ex.Message}");
-                }
-            }
-            // Для Windows
-            else if (DeviceInfo.Platform == DevicePlatform.WinUI)
-            {
-                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
-            }
-            // Для iOS/MacCatalyst
-            else
-            {
-                await Application.Current.MainPage.DisplayAlert(title, message, "OK");
+                _seconds += 1;
+                TimeSpan time = TimeSpan.FromSeconds(_seconds);
+                timeLabel.Text = time.ToString(@"hh\:mm\:ss");
             }
         }
 
-        public static async Task ShowPersistentNotification(string title, string message)
+        private void OnPitStopClicked(object sender, EventArgs e)
         {
-            // Альтернатива: использовать диалоговое окно, которое требует действия пользователя
-            bool result = await Application.Current.MainPage.DisplayAlert(
-                title, 
-                message, 
-                "OK", 
-                "Отмена");
-            
-            if (result)
+            Label lapLabel = new Label();
+            TimeSpan time = TimeSpan.FromSeconds(_seconds);
+            lapLabel.Text = $"Круг: {time.ToString(@"hh\:mm\:ss")}";
+            lapLabel.FontSize = 16;
+            lapLabel.TextColor = Colors.Blue;
+            pitStopContainer.Children.Add(lapLabel);
+
+            // Вибрация при записи круга (если доступно)
+            try
             {
-                // Действие при нажатии OK
-                Console.WriteLine("User confirmed notification");
+                Vibration.Default.Vibrate(TimeSpan.FromMilliseconds(500));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Vibration error: {ex.Message}");
             }
         }
+
+        private async void OnClearClicked(object sender, EventArgs e)
+        {
+            _seconds = 0;
+            timeLabel.Text = "00:00:00";
+            pitStopContainer.Children.Clear();
+            btnClear.IsEnabled = false;
+            
+            await NotificationService.ShowNotification("Секундомер", "Секундомер сброшен");
+        }
+    }
+}
+
+napominalka
+using Microsoft.Maui.Controls;
+
+namespace PR6_MAUI
+{
+    public partial class ReminderPage : ContentPage
+    {
+        private IDispatcherTimer _timer;
+        private List<Reminder> _reminders = new List<Reminder>();
+
+        public ReminderPage()
+        {
+            InitializeComponent();
+            SetupReminderTimer();
+        }
+
+        private void SetupReminderTimer()
+        {
+            _timer = Application.Current.Dispatcher.CreateTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Tick += OnReminderTimerTick;
+            _timer.Start();
+        }
+
+        private async void OnSetReminderClicked(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(messageEntry.Text))
+            {
+                await DisplayAlert("Ошибка", "Введите сообщение напоминания", "OK");
+                return;
+            }
+
+            DateTime reminderDateTime = datePicker.Date + timePicker.Time;
+
+            if (reminderDateTime <= DateTime.Now)
+            {
+                await DisplayAlert("Ошибка", "Выберите дату и время в будущем", "OK");
+                return;
+            }
+
+            Reminder newReminder = new Reminder
+            {
+                DateTime = reminderDateTime,
+                Message = messageEntry.Text
+            };
+
+            _reminders.Add(newReminder);
+            UpdateRemindersList();
+
+            statusLabel.Text = $"Напоминание установлено на {reminderDateTime:dd.MM.yyyy HH:mm}";
+            statusLabel.TextColor = Colors.Green;
+
+            messageEntry.Text = string.Empty;
+
+            // Подтверждение установки напоминания
+            await NotificationService.ShowNotification("Напоминалка", 
+                $"Напоминание установлено на {reminderDateTime:dd.MM.yyyy HH:mm}");
+        }
+
+        private async void OnReminderTimerTick(object sender, EventArgs e)
+        {
+            DateTime now = DateTime.Now;
+
+            for (int i = _reminders.Count - 1; i >= 0; i--)
+            {
+                if (_reminders[i].DateTime <= now)
+                {
+                    await ShowReminderNotification(_reminders[i].Message);
+                    _reminders.RemoveAt(i);
+                    UpdateRemindersList();
+                }
+            }
+        }
+
+        private async Task ShowReminderNotification(string message)
+        {
+            // Более навязчивое уведомление для напоминаний
+            bool confirmed = await Application.Current.MainPage.DisplayAlert(
+                "🔔 Напоминание",
+                message,
+                "Выполнено",
+                "Отложить на 5 мин");
+
+            if (!confirmed)
+            {
+                // Отложить на 5 минут
+                Reminder postponedReminder = new Reminder
+                {
+                    DateTime = DateTime.Now.AddMinutes(5),
+                    Message = $"[Отложено] {message}"
+                };
+                _reminders.Add(postponedReminder);
+                UpdateRemindersList();
+                
+                await NotificationService.ShowNotification("Напоминалка", 
+                    "Напоминание отложено на 5 минут");
+            }
+        }
+
+        private void UpdateRemindersList()
+        {
+            remindersContainer.Children.Clear();
+
+            foreach (var reminder in _reminders.OrderBy(r => r.DateTime))
+            {
+                Frame reminderFrame = new Frame
+                {
+                    BackgroundColor = Color.FromArgb("#E3F2FD"),
+                    Padding = 10,
+                    Margin = new Thickness(0, 0, 0, 5)
+                };
+
+                Label reminderLabel = new Label
+                {
+                    Text = $"{reminder.DateTime:dd.MM.yyyy HH:mm} - {reminder.Message}",
+                    FontSize = 14,
+                    TextColor = Colors.Black
+                };
+
+                reminderFrame.Content = reminderLabel;
+                remindersContainer.Children.Add(reminderFrame);
+            }
+        }
+    }
+
+    public class Reminder
+    {
+        public DateTime DateTime { get; set; }
+        public string Message { get; set; }
     }
 }
