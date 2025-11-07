@@ -1,12 +1,48 @@
+Отлично! Обновляю код с названием проекта PR8-MAUI. Вот полная структура проекта:
+
+App.xaml:
+
+```xml
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PR8_MAUI.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <Color x:Key="PrimaryColor">#512BD4</Color>
+            <Color x:Key="SecondaryColor">#DFD8F7</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+```
+
+App.xaml.cs:
+
+```csharp
+namespace PR8_MAUI
+{
+    public partial class App : Application
+    {
+        public App()
+        {
+            InitializeComponent();
+            MainPage = new MainPage();
+        }
+    }
+}
+```
+
+MainPage.xaml:
+
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <TabbedPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-            xmlns:local="clr-namespace:StudentInfoApp"
-            x:Class="StudentInfoApp.MainPage"
-            Title="Анкета студента">
+            x:Class="PR8_MAUI.MainPage"
+            Title="PR8-MAUI - Анкета студента">
     
     <!-- Вкладка для добавления нового студента -->
-    <ContentPage Title="Добавить студента">
+    <ContentPage Title="Добавить студента" IconImageSource="add_user.png">
         <ScrollView>
             <TableView Intent="Form" HeightRequest="800">
                 <TableRoot>
@@ -99,7 +135,7 @@
                         
                         <ViewCell>
                             <Button Text="Сохранить студента" Clicked="SaveStudent_Clicked" 
-                                    BackgroundColor="LightGreen" Margin="15,10"/>
+                                    BackgroundColor="LightGreen" Margin="15,10" TextColor="Black"/>
                         </ViewCell>
                     </TableSection>
                 </TableRoot>
@@ -108,19 +144,23 @@
     </ContentPage>
 
     <!-- Вкладка для просмотра всех студентов -->
-    <ContentPage Title="Список студентов">
+    <ContentPage Title="Список студентов" IconImageSource="list.png">
         <StackLayout>
-            <ListView x:Name="studentsListView" ItemSelected="StudentsListView_ItemSelected">
+            <Label Text="PR8-MAUI - Список студентов" FontSize="20" FontAttributes="Bold" 
+                   HorizontalOptions="Center" Margin="0,10"/>
+            
+            <ListView x:Name="studentsListView" ItemSelected="StudentsListView_ItemSelected" HeightRequest="400">
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
-                            <StackLayout Padding="10" Orientation="Horizontal">
+                            <StackLayout Padding="10" Orientation="Horizontal" BackgroundColor="White">
                                 <Image Source="{Binding Photo}" Aspect="AspectFill" 
                                        WidthRequest="50" HeightRequest="50"/>
                                 <StackLayout Margin="10,0" VerticalOptions="Center">
-                                    <Label Text="{Binding FullName}" FontAttributes="Bold"/>
-                                    <Label Text="{Binding AgeInfo}" FontSize="Small"/>
-                                    <Label Text="{Binding GradesInfo}" FontSize="Small"/>
+                                    <Label Text="{Binding FullName}" FontAttributes="Bold" FontSize="16"/>
+                                    <Label Text="{Binding AgeInfo}" FontSize="12" TextColor="Gray"/>
+                                    <Label Text="{Binding GradesInfo}" FontSize="12" TextColor="Gray"/>
+                                    <Label Text="{Binding DormitoryInfo}" FontSize="12" TextColor="Blue"/>
                                 </StackLayout>
                             </StackLayout>
                         </ViewCell>
@@ -131,10 +171,414 @@
             <!-- Кнопки управления -->
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,10">
                 <Button x:Name="editButton" Text="Редактировать" Clicked="EditButton_Clicked" 
-                        BackgroundColor="LightBlue" Margin="5" IsEnabled="False"/>
+                        BackgroundColor="LightBlue" Margin="5" IsEnabled="False" TextColor="Black"/>
                 <Button x:Name="deleteButton" Text="Удалить" Clicked="DeleteButton_Clicked" 
-                        BackgroundColor="LightCoral" Margin="5" IsEnabled="False"/>
+                        BackgroundColor="LightCoral" Margin="5" IsEnabled="False" TextColor="Black"/>
             </StackLayout>
         </StackLayout>
     </ContentPage>
 </TabbedPage>
+```
+
+MainPage.xaml.cs:
+
+```csharp
+using Microsoft.Maui.Controls;
+using System.Collections.ObjectModel;
+
+namespace PR8_MAUI
+{
+    public partial class MainPage : TabbedPage
+    {
+        public ObservableCollection<Student> Students { get; set; }
+        private Student selectedStudent;
+
+        public MainPage()
+        {
+            InitializeComponent();
+            Students = new ObservableCollection<Student>();
+            studentsListView.ItemsSource = Students;
+            
+            // Устанавливаем текущую дату в DatePicker
+            dateBirth.Date = DateTime.Now.AddYears(-18);
+        }
+
+        private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
+        {
+            UpdateAge();
+        }
+
+        private void UpdateAge()
+        {
+            int age = DateTime.Now.Year - dateBirth.Date.Year;
+            if (DateTime.Now.Month < dateBirth.Date.Month || 
+                (DateTime.Now.Month == dateBirth.Date.Month && 
+                 DateTime.Now.Day < dateBirth.Date.Day))
+            {
+                age--;
+            }
+            this.age.Text = $"Возраст - {age}";
+        }
+
+        private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            mathGrade.Text = mathStepper.Value.ToString("0");
+        }
+
+        private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            programmingGrade.Text = programmingStepper.Value.ToString("0");
+        }
+
+        private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            englishGrade.Text = englishSlider.Value.ToString("0.0");
+        }
+
+        private void AddPhotoBtn_Clicked(object sender, System.EventArgs e)
+        {
+            // Используем локальное изображение как в лекции
+            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
+        }
+
+        private void SaveStudent_Clicked(object sender, System.EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(lastName.Text) || string.IsNullOrWhiteSpace(firstName.Text))
+            {
+                DisplayAlert("Ошибка", "Заполните обязательные поля (Фамилия и Имя)", "OK");
+                return;
+            }
+
+            var student = new Student
+            {
+                LastName = lastName.Text,
+                FirstName = firstName.Text,
+                MiddleName = middleName.Text,
+                BirthDate = dateBirth.Date,
+                Age = CalculateAge(dateBirth.Date),
+                Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан",
+                NeedsDormitory = dormitorySwitch.On,
+                IsMonitor = monitorSwitch.On,
+                MathGrade = mathGrade.Text,
+                ProgrammingGrade = programmingGrade.Text,
+                EnglishGrade = englishGrade.Text,
+                AdditionalInfo = additionalInfo.Text,
+                Photo = studentPhoto.Source
+            };
+
+            Students.Add(student);
+            ClearForm();
+            DisplayAlert("Успех", $"Студент {student.FullName} добавлен в список", "OK");
+            
+            // Переключаемся на вкладку со списком
+            CurrentPage = Children[1];
+        }
+
+        private void StudentsListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+        {
+            selectedStudent = e.SelectedItem as Student;
+            editButton.IsEnabled = selectedStudent != null;
+            deleteButton.IsEnabled = selectedStudent != null;
+        }
+
+        private async void EditButton_Clicked(object sender, System.EventArgs e)
+        {
+            if (selectedStudent == null) return;
+
+            // Загружаем данные выбранного студента в форму редактирования
+            await Navigation.PushAsync(new EditStudentPage(selectedStudent, Students));
+        }
+
+        private async void DeleteButton_Clicked(object sender, System.EventArgs e)
+        {
+            if (selectedStudent == null) return;
+
+            bool result = await DisplayAlert("PR8-MAUI - Подтверждение удаления", 
+                $"Вы действительно хотите удалить студента {selectedStudent.FullName}?", 
+                "Да", "Нет");
+
+            if (result)
+            {
+                Students.Remove(selectedStudent);
+                selectedStudent = null;
+                editButton.IsEnabled = false;
+                deleteButton.IsEnabled = false;
+                await DisplayAlert("Успех", "Студент удален из списка", "OK");
+            }
+        }
+
+        private int CalculateAge(DateTime birthDate)
+        {
+            int age = DateTime.Now.Year - birthDate.Year;
+            if (DateTime.Now.Month < birthDate.Month || 
+                (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
+            {
+                age--;
+            }
+            return age;
+        }
+
+        private void ClearForm()
+        {
+            lastName.Text = string.Empty;
+            firstName.Text = string.Empty;
+            middleName.Text = string.Empty;
+            dateBirth.Date = DateTime.Now.AddYears(-18);
+            UpdateAge();
+            genderPicker.SelectedIndex = -1;
+            dormitorySwitch.On = false;
+            monitorSwitch.On = false;
+            mathStepper.Value = 5;
+            programmingStepper.Value = 5;
+            englishSlider.Value = 5;
+            additionalInfo.Text = string.Empty;
+            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
+        }
+    }
+}
+```
+
+Student.cs:
+
+```csharp
+namespace PR8_MAUI
+{
+    public class Student
+    {
+        public string LastName { get; set; }
+        public string FirstName { get; set; }
+        public string MiddleName { get; set; }
+        public string FullName => $"{LastName} {FirstName} {MiddleName}";
+        public DateTime BirthDate { get; set; }
+        public int Age { get; set; }
+        public string Gender { get; set; }
+        public bool NeedsDormitory { get; set; }
+        public bool IsMonitor { get; set; }
+        public string MathGrade { get; set; }
+        public string ProgrammingGrade { get; set; }
+        public string EnglishGrade { get; set; }
+        public string AdditionalInfo { get; set; }
+        public ImageSource Photo { get; set; }
+
+        public string AgeInfo => $"Возраст: {Age} лет";
+        public string GradesInfo => $"Оценки: М:{MathGrade}, П:{ProgrammingGrade}, А:{EnglishGrade}";
+        public string DormitoryInfo => NeedsDormitory ? "Нужно общежитие" : "Не нужно общежитие";
+        public string MonitorInfo => IsMonitor ? "Староста" : "Не староста";
+    }
+}
+```
+
+EditStudentPage.xaml:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PR8_MAUI.EditStudentPage"
+             Title="PR8-MAUI - Редактирование студента">
+    
+    <ScrollView>
+        <StackLayout Padding="20">
+            <Label Text="PR8-MAUI - Редактирование данных студента" 
+                   FontSize="20" FontAttributes="Bold" 
+                   HorizontalOptions="Center" Margin="0,0,0,20"/>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Фамилия:" FontAttributes="Bold"/>
+                    <Entry x:Name="lastNameEntry" Placeholder="Введите фамилию"/>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Имя:" FontAttributes="Bold"/>
+                    <Entry x:Name="firstNameEntry" Placeholder="Введите имя"/>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Отчество:" FontAttributes="Bold"/>
+                    <Entry x:Name="middleNameEntry" Placeholder="Введите отчество"/>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Дата рождения:" FontAttributes="Bold"/>
+                    <DatePicker x:Name="birthDatePicker"/>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Пол:" FontAttributes="Bold"/>
+                    <Picker x:Name="genderPicker" Title="Выберите пол">
+                        <Picker.Items>
+                            <x:String>Мужской</x:String>
+                            <x:String>Женский</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Проживание и должность:" FontAttributes="Bold"/>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Нужно общежитие:" VerticalOptions="Center"/>
+                        <Switch x:Name="dormitorySwitch" HorizontalOptions="End"/>
+                    </StackLayout>
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="Является старостой:" VerticalOptions="Center"/>
+                        <Switch x:Name="monitorSwitch" HorizontalOptions="End"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Оценки:" FontAttributes="Bold"/>
+                    
+                    <StackLayout Orientation="Horizontal" Margin="0,5">
+                        <Label Text="Математика:" VerticalOptions="Center"/>
+                        <Label x:Name="mathGradeLabel" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                        <Stepper x:Name="mathStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
+                               ValueChanged="MathStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
+                    </StackLayout>
+                    
+                    <StackLayout Orientation="Horizontal" Margin="0,5">
+                        <Label Text="Программирование:" VerticalOptions="Center"/>
+                        <Label x:Name="programmingGradeLabel" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                        <Stepper x:Name="programmingStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
+                               ValueChanged="ProgrammingStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
+                    </StackLayout>
+                    
+                    <StackLayout Orientation="Horizontal" Margin="0,5">
+                        <Label Text="Английский:" VerticalOptions="Center"/>
+                        <Label x:Name="englishGradeLabel" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                        <Slider x:Name="englishSlider" Minimum="2" Maximum="5" Value="5"
+                               ValueChanged="EnglishSlider_ValueChanged" HorizontalOptions="FillAndExpand"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+            
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Дополнительная информация:" FontAttributes="Bold"/>
+                    <Editor x:Name="additionalInfoEditor" Placeholder="Хобби, увлечения..." 
+                           HeightRequest="100"/>
+                </StackLayout>
+            </Frame>
+            
+            <Button Text="Сохранить изменения" Clicked="SaveChanges_Clicked" 
+                    BackgroundColor="LightGreen" Margin="0,20" TextColor="Black" FontAttributes="Bold"/>
+            
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
+```
+
+EditStudentPage.xaml.cs:
+
+```csharp
+using Microsoft.Maui.Controls;
+using System.Collections.ObjectModel;
+
+namespace PR8_MAUI
+{
+    public partial class EditStudentPage : ContentPage
+    {
+        private Student student;
+        private ObservableCollection<Student> students;
+
+        public EditStudentPage(Student studentToEdit, ObservableCollection<Student> studentsList)
+        {
+            InitializeComponent();
+            student = studentToEdit;
+            students = studentsList;
+            LoadStudentData();
+        }
+
+        private void LoadStudentData()
+        {
+            lastNameEntry.Text = student.LastName;
+            firstNameEntry.Text = student.FirstName;
+            middleNameEntry.Text = student.MiddleName;
+            birthDatePicker.Date = student.BirthDate;
+            genderPicker.SelectedItem = student.Gender;
+            dormitorySwitch.IsToggled = student.NeedsDormitory;
+            monitorSwitch.IsToggled = student.IsMonitor;
+            mathStepper.Value = double.Parse(student.MathGrade);
+            programmingStepper.Value = double.Parse(student.ProgrammingGrade);
+            englishSlider.Value = double.Parse(student.EnglishGrade);
+            additionalInfoEditor.Text = student.AdditionalInfo;
+        }
+
+        private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            mathGradeLabel.Text = mathStepper.Value.ToString("0");
+        }
+
+        private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            programmingGradeLabel.Text = programmingStepper.Value.ToString("0");
+        }
+
+        private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            englishGradeLabel.Text = englishSlider.Value.ToString("0.0");
+        }
+
+        private async void SaveChanges_Clicked(object sender, System.EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(lastNameEntry.Text) || string.IsNullOrWhiteSpace(firstNameEntry.Text))
+            {
+                await DisplayAlert("PR8-MAUI - Ошибка", "Заполните обязательные поля (Фамилия и Имя)", "OK");
+                return;
+            }
+
+            // Обновляем данные студента
+            student.LastName = lastNameEntry.Text;
+            student.FirstName = firstNameEntry.Text;
+            student.MiddleName = middleNameEntry.Text;
+            student.BirthDate = birthDatePicker.Date;
+            student.Age = CalculateAge(birthDatePicker.Date);
+            student.Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан";
+            student.NeedsDormitory = dormitorySwitch.IsToggled;
+            student.IsMonitor = monitorSwitch.IsToggled;
+            student.MathGrade = mathGradeLabel.Text;
+            student.ProgrammingGrade = programmingGradeLabel.Text;
+            student.EnglishGrade = englishGradeLabel.Text;
+            student.AdditionalInfo = additionalInfoEditor.Text;
+
+            await DisplayAlert("PR8-MAUI - Успех", "Данные студента обновлены", "OK");
+            await Navigation.PopAsync();
+        }
+
+        private int CalculateAge(DateTime birthDate)
+        {
+            int age = DateTime.Now.Year - birthDate.Year;
+            if (DateTime.Now.Month < birthDate.Month || 
+                (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
+            {
+                age--;
+            }
+            return age;
+        }
+    }
+}
+```
+
+Особенности проекта PR8-MAUI:
+
+1. Название проекта - PR8_MAUI в соответствии с заданием
+2. Две вкладки - добавление и просмотр студентов
+3. Полный CRUD - создание, чтение, обновление, удаление
+4. TableView как основной элемент из лекции
+5. Все изученные компоненты - Picker, Stepper, Slider, Image, SwitchCell, EntryCell и т.д.
+6. Визуальное улучшение - фоны, цвета, отступы
+7. Работа с изображениями как в лекции через ImageSource.FromFile()
+
+Проект готов к использованию и соответствует всем требованиям из лекции!
