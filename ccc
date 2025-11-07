@@ -1,582 +1,143 @@
-Понял! Вам нужны настоящие пуш-уведомления через Local Notification plugin. Давайте настроим его правильно:
-
-1. Установите пакет Local Notification
-
-В файл проекта (.csproj) добавьте:
-
-```xml
-<PackageReference Include="Plugin.LocalNotification" Version="13.0.1" />
-```
-
-2. Настройка для Android
-
-Platforms/Android/AndroidManifest.xml:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-    
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/appicon"
-        android:roundIcon="@mipmap/appicon_round"
-        android:supportsRtl="true">
-        
-        <!-- Добавьте эту активность -->
-        <activity android:name="Plugin.LocalNotification.NotificationActionReceiver"
-                  android:exported="true" />
-                  
-    </application>
-</manifest>
-```
-
-Platforms/Android/MainActivity.cs:
-
-```csharp
-using Android.App;
-using Android.Content.PM;
-using Plugin.LocalNotification;
-
-namespace PR6_MAUI
-{
-    [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
-    public class MainActivity : MauiAppCompatActivity
-    {
-        protected override void OnCreate(Bundle? savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
-            
-            // Инициализация Local Notification
-            NotificationCenter.CreateNotificationChannel(new NotificationChannelRequest
-            {
-                Id = "alarm_channel",
-                Name = "Будильник",
-                Description = "Канал для будильников",
-                Importance = Android.App.NotificationImportance.High
-            });
-            
-            NotificationCenter.CreateNotificationChannel(new NotificationChannelRequest
-            {
-                Id = "reminder_channel",
-                Name = "Напоминания",
-                Description = "Канал для напоминаний",
-                Importance = Android.App.NotificationImportance.High
-            });
-            
-            NotificationCenter.CreateNotificationChannel(new NotificationChannelRequest
-            {
-                Id = "timer_channel", 
-                Name = "Таймеры",
-                Description = "Канал для таймеров",
-                Importance = Android.App.NotificationImportance.High
-            });
-        }
-        
-        protected override void OnNewIntent(Android.Content.Intent? intent)
-        {
-            NotificationCenter.NotifyNotificationTapped(intent);
-            base.OnNewIntent(intent);
-        }
-    }
-}
-```
-
-3. Настройка для iOS (если нужно)
-
-Platforms/iOS/AppDelegate.cs:
-
-```csharp
-using Foundation;
-using Plugin.LocalNotification;
-using UIKit;
-
-namespace PR6_MAUI
-{
-    [Register("AppDelegate")]
-    public class AppDelegate : MauiUIApplicationDelegate
-    {
-        protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
-
-        public override void WillEnterForeground(UIApplication application)
-        {
-            NotificationCenter.ResetApplicationIconBadgeNumber();
-        }
-    }
-}
-```
-
-4. Сервис уведомлений с Local Notification
-
-```csharp
-using Plugin.LocalNotification;
-
-namespace PR6_MAUI
-{
-    public static class PushNotificationService
-    {
-        public static async Task ShowNotification(string title, string message, int notificationId = 1000)
-        {
-            var request = new NotificationRequest
-            {
-                NotificationId = notificationId,
-                Title = title,
-                Description = message,
-                BadgeNumber = 1,
-                CategoryType = NotificationCategoryType.Alarm,
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = DateTime.Now
-                }
-            };
-
-            await NotificationCenter.Current.Show(request);
-        }
-
-        public static async Task ShowAlarmNotification(string message, TimeSpan alarmTime, int notificationId = 2000)
-        {
-            var request = new NotificationRequest
-            {
-                NotificationId = notificationId,
-                Title = "⏰ БУДИЛЬНИК",
-                Description = message,
-                Subtitle = $"На {alarmTime:hh\\:mm}",
-                BadgeNumber = 1,
-                CategoryType = NotificationCategoryType.Alarm,
-                Android = new AndroidOptions
-                {
-                    ChannelId = "alarm_channel",
-                    Priority = AndroidPriority.Max,
-                    VibrationPattern = new long[] { 1000, 1000, 1000, 1000 },
-                    Ongoing = true, // Нельзя смахнуть
-                    AutoCancel = false
-                },
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = DateTime.Now
-                }
-            };
-
-            await NotificationCenter.Current.Show(request);
-        }
-
-        public static async Task ShowReminderNotification(string message, DateTime reminderTime, int notificationId = 3000)
-        {
-            var request = new NotificationRequest
-            {
-                NotificationId = notificationId,
-                Title = "🔔 НАПОМИНАНИЕ",
-                Description = message,
-                Subtitle = $"На {reminderTime:HH:mm}",
-                BadgeNumber = 1,
-                CategoryType = NotificationCategoryType.Reminder,
-                Android = new AndroidOptions
-                {
-                    ChannelId = "reminder_channel",
-                    Priority = AndroidPriority.High,
-                    VibrationPattern = new long[] { 500, 500, 500 }
-                },
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = DateTime.Now
-                }
-            };
-
-            await NotificationCenter.Current.Show(request);
-        }
-
-        public static async Task ShowTimerNotification(string message, int notificationId = 4000)
-        {
-            var request = new NotificationRequest
-            {
-                NotificationId = notificationId,
-                Title = "⏱️ ТАЙМЕР",
-                Description = message,
-                BadgeNumber = 1,
-                CategoryType = NotificationCategoryType.Status,
-                Android = new AndroidOptions
-                {
-                    ChannelId = "timer_channel",
-                    Priority = AndroidPriority.High,
-                    VibrationPattern = new long[] { 300, 300, 300, 300 }
-                },
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = DateTime.Now
-                }
-            };
-
-            await NotificationCenter.Current.Show(request);
-        }
-
-        public static async Task ScheduleNotification(string title, string message, DateTime notifyTime, int notificationId)
-        {
-            var request = new NotificationRequest
-            {
-                NotificationId = notificationId,
-                Title = title,
-                Description = message,
-                BadgeNumber = 1,
-                Schedule = new NotificationRequestSchedule
-                {
-                    NotifyTime = notifyTime
-                }
-            };
-
-            await NotificationCenter.Current.Show(request);
-        }
-
-        public static void CancelNotification(int notificationId)
-        {
-            NotificationCenter.Current.Cancel(notificationId);
-        }
-
-        public static void CancelAllNotifications()
-        {
-            NotificationCenter.Current.CancelAll();
-        }
-    }
-}
-```
-
-5. Обновленный будильник с пуш-уведомлениями
-
-```csharp
 using Microsoft.Maui.Controls;
-using Plugin.LocalNotification;
+using System.Collections.ObjectModel;
 
-namespace PR6_MAUI
+namespace StudentInfoApp
 {
-    public partial class AlarmPage : ContentPage
+    public partial class MainPage : TabbedPage
     {
-        private TimeSpan _alarmTime;
-        private IDispatcherTimer _timer;
-        private bool _alarmTriggered = false;
-        private int _alarmNotificationId = 1000;
+        public ObservableCollection<Student> Students { get; set; }
+        private Student selectedStudent;
 
-        public AlarmPage()
+        public MainPage()
         {
             InitializeComponent();
-            SetupAlarmTimer();
-            
-            // Обработка нажатия на уведомление
-            NotificationCenter.Current.NotificationActionTapped += OnNotificationActionTapped;
+            Students = new ObservableCollection<Student>();
+            studentsListView.ItemsSource = Students;
         }
 
-        private void OnAlarmToggled(object sender, ToggledEventArgs e)
+        private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
         {
-            if (e.Value)
+            int age = DateTime.Now.Year - dateBirth.Date.Year;
+            if (DateTime.Now.Month < dateBirth.Date.Month || 
+                (DateTime.Now.Month == dateBirth.Date.Month && 
+                 DateTime.Now.Day < dateBirth.Date.Day))
             {
-                _alarmTime = timePicker.Time;
-                timePicker.IsEnabled = false;
-                _alarmTriggered = false;
-                _timer.Start();
-                statusLabel.Text = "Будильник включен";
-                statusLabel.TextColor = Colors.Green;
-                
-                // Пуш-уведомление о включении
-                _ = PushNotificationService.ShowNotification("Будильник", 
-                    $"Установлен на {_alarmTime:hh\\:mm}", _alarmNotificationId);
+                age--;
             }
-            else
+            this.age.Text = $"Возраст - {age}";
+        }
+
+        private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            mathGrade.Text = mathStepper.Value.ToString("0");
+        }
+
+        private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            programmingGrade.Text = programmingStepper.Value.ToString("0");
+        }
+
+        private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
+        {
+            englishGrade.Text = englishSlider.Value.ToString("0.0");
+        }
+
+        private void AddPhotoBtn_Clicked(object sender, System.EventArgs e)
+        {
+            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
+        }
+
+        private void SaveStudent_Clicked(object sender, System.EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(lastName.Text) || string.IsNullOrWhiteSpace(firstName.Text))
             {
-                timePicker.IsEnabled = true;
-                _timer.Stop();
-                statusLabel.Text = "Будильник выключен";
-                statusLabel.TextColor = Colors.Gray;
-                
-                // Отменяем уведомление
-                PushNotificationService.CancelNotification(_alarmNotificationId);
-            }
-        }
-
-        private async void OnAlarmTimerTick(object sender, EventArgs e)
-        {
-            DateTime now = DateTime.Now;
-            TimeSpan currentTime = new TimeSpan(now.Hour, now.Minute, now.Second);
-
-            if (Math.Abs(_alarmTime.TotalMinutes - currentTime.TotalMinutes) < 1 && 
-                !_alarmTriggered && CheckDayOfWeek(now.DayOfWeek))
-            {
-                _alarmTriggered = true;
-                _timer.Stop();
-                await TriggerAlarm();
-            }
-        }
-
-        private bool CheckDayOfWeek(DayOfWeek day)
-        {
-            return day switch
-            {
-                DayOfWeek.Monday => mondaySwitch.IsToggled,
-                DayOfWeek.Tuesday => tuesdaySwitch.IsToggled,
-                DayOfWeek.Wednesday => wednesdaySwitch.IsToggled,
-                DayOfWeek.Thursday => thursdaySwitch.IsToggled,
-                DayOfWeek.Friday => fridaySwitch.IsToggled,
-                DayOfWeek.Saturday => saturdaySwitch.IsToggled,
-                DayOfWeek.Sunday => sundaySwitch.IsToggled,
-                _ => false
-            };
-        }
-
-        private async Task TriggerAlarm()
-        {
-            // Настоящее пуш-уведомление для будильника
-            await PushNotificationService.ShowAlarmNotification(
-                "ПРОСЫПАЙТЕСЬ! ВРЕМЯ ВСТАВАТЬ!", 
-                _alarmTime, 
-                _alarmNotificationId);
-        }
-
-        private void OnNotificationActionTapped(NotificationActionEventArgs e)
-        {
-            // Обработка действий с уведомления
-            if (e.Request.NotificationId == _alarmNotificationId)
-            {
-                // Выключаем будильник при нажатии на уведомление
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    alarmSwitch.IsToggled = false;
-                });
-            }
-        }
-
-        protected override void OnDisappearing()
-        {
-            base.OnDisappearing();
-            NotificationCenter.Current.NotificationActionTapped -= OnNotificationActionTapped;
-        }
-    }
-}
-```
-
-6. Обновленная напоминалка
-
-```csharp
-using Microsoft.Maui.Controls;
-using Plugin.LocalNotification;
-
-namespace PR6_MAUI
-{
-    public partial class ReminderPage : ContentPage
-    {
-        private IDispatcherTimer _timer;
-        private List<Reminder> _reminders = new List<Reminder>();
-        private int _reminderCounter = 5000;
-
-        public ReminderPage()
-        {
-            InitializeComponent();
-            SetupReminderTimer();
-            
-            // Обработка нажатия на уведомление
-            NotificationCenter.Current.NotificationActionTapped += OnReminderNotificationTapped;
-        }
-
-        private async void OnSetReminderClicked(object sender, EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(messageEntry.Text))
-            {
-                await DisplayAlert("Ошибка", "Введите сообщение напоминания", "OK");
+                DisplayAlert("Ошибка", "Заполните обязательные поля (Фамилия и Имя)", "OK");
                 return;
             }
 
-            DateTime reminderDateTime = datePicker.Date + timePicker.Time;
-
-            if (reminderDateTime <= DateTime.Now)
+            var student = new Student
             {
-                await DisplayAlert("Ошибка", "Выберите дату и время в будущем", "OK");
-                return;
-            }
-
-            int notificationId = _reminderCounter++;
-            Reminder newReminder = new Reminder
-            {
-                DateTime = reminderDateTime,
-                Message = messageEntry.Text,
-                NotificationId = notificationId
+                LastName = lastName.Text,
+                FirstName = firstName.Text,
+                MiddleName = middleName.Text,
+                BirthDate = dateBirth.Date,
+                Age = CalculateAge(dateBirth.Date),
+                Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан",
+                NeedsDormitory = dormitorySwitch.On,
+                IsMonitor = monitorSwitch.On,
+                MathGrade = mathGrade.Text,
+                ProgrammingGrade = programmingGrade.Text,
+                EnglishGrade = englishGrade.Text,
+                AdditionalInfo = additionalInfo.Text,
+                Photo = studentPhoto.Source
             };
 
-            _reminders.Add(newReminder);
-            UpdateRemindersList();
-
-            // Запланировать пуш-уведомление
-            await PushNotificationService.ScheduleNotification(
-                "🔔 Напоминание",
-                messageEntry.Text,
-                reminderDateTime,
-                notificationId);
-
-            statusLabel.Text = $"Напоминание установлено на {reminderDateTime:dd.MM.yyyy HH:mm}";
-            statusLabel.TextColor = Colors.Green;
-            messageEntry.Text = string.Empty;
-        }
-
-        private void OnReminderNotificationTapped(NotificationActionEventArgs e)
-        {
-            // Находим и удаляем напоминание при нажатии на уведомление
-            var reminder = _reminders.FirstOrDefault(r => r.NotificationId == e.Request.NotificationId);
-            if (reminder != null)
-            {
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    _reminders.Remove(reminder);
-                    UpdateRemindersList();
-                });
-            }
-        }
-
-        private void UpdateRemindersList()
-        {
-            remindersContainer.Children.Clear();
-
-            foreach (var reminder in _reminders.OrderBy(r => r.DateTime))
-            {
-                var frame = new Frame
-                {
-                    BackgroundColor = Color.FromArgb("#E3F2FD"),
-                    Padding = 10,
-                    Margin = new Thickness(0, 0, 0, 5)
-                };
-
-                var label = new Label
-                {
-                    Text = $"{reminder.DateTime:dd.MM.yyyy HH:mm} - {reminder.Message}",
-                    FontSize = 14
-                };
-
-                frame.Content = label;
-                remindersContainer.Children.Add(frame);
-            }
-        }
-
-        protected override void OnDisappearing()
-        {
-            base.OnDisappearing();
-            NotificationCenter.Current.NotificationActionTapped -= OnReminderNotificationTapped;
-        }
-    }
-
-    public class Reminder
-    {
-        public DateTime DateTime { get; set; }
-        public string Message { get; set; }
-        public int NotificationId { get; set; }
-    }
-}
-```
-
-7. Обновленный секундомер
-
-```csharp
-using Microsoft.Maui.Controls;
-using Plugin.LocalNotification;
-
-namespace PR6_MAUI
-{
-    public partial class StopwatchPage : ContentPage
-    {
-        private int _seconds = 0;
-        private bool _timerIsRun = false;
-        private IDispatcherTimer _dispatcherTimer;
-        private int _notificationCounter = 6000;
-
-        public StopwatchPage()
-        {
-            InitializeComponent();
-            SetupDispatcherTimer();
-        }
-
-        private async void OnStopClicked(object sender, EventArgs e)
-        {
-            _timerIsRun = false;
-            _dispatcherTimer.Stop();
-            btnStart.IsEnabled = true;
-            btnStop.IsEnabled = false;
-            btnPitStop.IsEnabled = false;
-            btnClear.IsEnabled = true;
-
-            // Пуш-уведомление об остановке
-            await PushNotificationService.ShowTimerNotification(
-                $"Секундомер остановлен на {timeLabel.Text}", 
-                _notificationCounter++);
-        }
-
-        private async void OnPitStopClicked(object sender, EventArgs e)
-        {
-            TimeSpan time = TimeSpan.FromSeconds(_seconds);
+            Students.Add(student);
+            ClearForm();
+            DisplayAlert("Успех", "Студент добавлен в список", "OK");
             
-            // Добавляем круг в список
-            Label lapLabel = new Label
-            {
-                Text = $"Круг: {time.ToString(@"hh\:mm\:ss")}",
-                FontSize = 16,
-                TextColor = Colors.Blue
-            };
-            pitStopContainer.Children.Add(lapLabel);
+            // Переключаемся на вкладку со списком
+            CurrentPage = Children[1];
+        }
 
-            // Пуш-уведомление о круге
-            await PushNotificationService.ShowTimerNotification(
-                $"Круг записан: {time.ToString(@"hh\\:mm\\:ss")}", 
-                _notificationCounter++);
+        private void StudentsListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+        {
+            selectedStudent = e.SelectedItem as Student;
+            editButton.IsEnabled = selectedStudent != null;
+            deleteButton.IsEnabled = selectedStudent != null;
+        }
+
+        private async void EditButton_Clicked(object sender, System.EventArgs e)
+        {
+            if (selectedStudent == null) return;
+
+            // Загружаем данные выбранного студента в форму редактирования
+            await Navigation.PushAsync(new EditStudentPage(selectedStudent, Students));
+        }
+
+        private async void DeleteButton_Clicked(object sender, System.EventArgs e)
+        {
+            if (selectedStudent == null) return;
+
+            bool result = await DisplayAlert("Подтверждение", 
+                $"Вы действительно хотите удалить студента {selectedStudent.FullName}?", 
+                "Да", "Нет");
+
+            if (result)
+            {
+                Students.Remove(selectedStudent);
+                selectedStudent = null;
+                editButton.IsEnabled = false;
+                deleteButton.IsEnabled = false;
+            }
+        }
+
+        private int CalculateAge(DateTime birthDate)
+        {
+            int age = DateTime.Now.Year - birthDate.Year;
+            if (DateTime.Now.Month < birthDate.Month || 
+                (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
+            {
+                age--;
+            }
+            return age;
+        }
+
+        private void ClearForm()
+        {
+            lastName.Text = string.Empty;
+            firstName.Text = string.Empty;
+            middleName.Text = string.Empty;
+            dateBirth.Date = DateTime.Now;
+            age.Text = "Возраст - ";
+            genderPicker.SelectedIndex = -1;
+            dormitorySwitch.On = false;
+            monitorSwitch.On = false;
+            mathStepper.Value = 5;
+            programmingStepper.Value = 5;
+            englishSlider.Value = 5;
+            additionalInfo.Text = string.Empty;
+            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
         }
     }
 }
-```
-
-8. Обновленный таймер
-
-```csharp
-using Microsoft.Maui.Controls;
-using Plugin.LocalNotification;
-
-namespace PR6_MAUI
-{
-    public partial class TimerPage : ContentPage
-    {
-        private TimeSpan _time;
-        private IDispatcherTimer _timer;
-        private int _timerNotificationId = 7000;
-
-        public TimerPage()
-        {
-            InitializeComponent();
-            SetupTimer();
-        }
-
-        private async void OnTimerTick(object sender, EventArgs e)
-        {
-            if (_time.CompareTo(new TimeSpan(0, 0, 0)) > 0)
-            {
-                _time = _time.Add(new TimeSpan(0, 0, -1));
-                timeLabel.Text = _time.ToString(@"hh\:mm\:ss");
-            }
-            else
-            {
-                _timer.Stop();
-                timeLabel.Text = "00:00:00";
-                btnStart.IsEnabled = true;
-                btnStop.IsEnabled = false;
-                btnReset.IsEnabled = true;
-
-                // Пуш-уведомление о завершении таймера
-                await PushNotificationService.ShowTimerNotification(
-                    "ТАЙМЕР ЗАВЕРШЕН! Время вышло!", 
-                    _timerNotificationId);
-            }
-        }
-    }
-}
-```
-
-Теперь у вас будут настоящие пуш-уведомления, которые появляются сверху экрана! Уведомления будут:
-
-· 📱 Появляться поверх всех приложений
-· 🔔 Издавать звук и вибрацию
-· ⏰ Оставаться в шторке уведомлений
-· 👆 Реагировать на нажатия
-
-Переустановите приложение и проверьте работу!
