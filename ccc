@@ -1,143 +1,140 @@
-using Microsoft.Maui.Controls;
-using System.Collections.ObjectModel;
+<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+            xmlns:local="clr-namespace:StudentInfoApp"
+            x:Class="StudentInfoApp.MainPage"
+            Title="Анкета студента">
+    
+    <!-- Вкладка для добавления нового студента -->
+    <ContentPage Title="Добавить студента">
+        <ScrollView>
+            <TableView Intent="Form" HeightRequest="800">
+                <TableRoot>
+                    <!-- Персональные данные -->
+                    <TableSection Title="Персональные данные">
+                        <EntryCell x:Name="lastName" Label="Фамилия" Placeholder="Введите фамилию"/>
+                        <EntryCell x:Name="firstName" Label="Имя" Placeholder="Введите имя"/>
+                        <EntryCell x:Name="middleName" Label="Отчество" Placeholder="Введите отчество"/>
+                        
+                        <ViewCell>
+                            <StackLayout Orientation="Horizontal" Margin="15,0,15,0">
+                                <Label Text="Дата рождения" VerticalOptions="Center"/>
+                                <DatePicker x:Name="dateBirth" DateSelected="dateBirth_DateSelected" 
+                                           HorizontalOptions="FillAndExpand"/>
+                            </StackLayout>
+                        </ViewCell>
+                        
+                        <TextCell x:Name="age" Text="Возраст - "/>
+                        
+                        <ViewCell>
+                            <StackLayout Orientation="Horizontal" Margin="15,0,15,0">
+                                <Label Text="Пол" VerticalOptions="Center" Margin="0,0,10,0"/>
+                                <Picker x:Name="genderPicker" Title="Выберите пол" HorizontalOptions="FillAndExpand">
+                                    <Picker.Items>
+                                        <x:String>Мужской</x:String>
+                                        <x:String>Женский</x:String>
+                                    </Picker.Items>
+                                </Picker>
+                            </StackLayout>
+                        </ViewCell>
+                    </TableSection>
 
-namespace StudentInfoApp
-{
-    public partial class MainPage : TabbedPage
-    {
-        public ObservableCollection<Student> Students { get; set; }
-        private Student selectedStudent;
+                    <!-- Фото -->
+                    <TableSection Title="Фотография">
+                        <ViewCell>
+                            <StackLayout Orientation="Vertical" Padding="15,10">
+                                <Button x:Name="addPhotoBtn" Text="Добавить фото" 
+                                        Clicked="AddPhotoBtn_Clicked" HorizontalOptions="Center"/>
+                                <Image x:Name="studentPhoto" Source="dotnet_bot.svg" 
+                                       Aspect="AspectFit" HeightRequest="150" 
+                                       HorizontalOptions="Center" Margin="0,10,0,0"/>
+                            </StackLayout>
+                        </ViewCell>
+                    </TableSection>
 
-        public MainPage()
-        {
-            InitializeComponent();
-            Students = new ObservableCollection<Student>();
-            studentsListView.ItemsSource = Students;
-        }
+                    <!-- Проживание -->
+                    <TableSection Title="Проживание">
+                        <SwitchCell x:Name="dormitorySwitch" Text="Нужно общежитие"/>
+                    </TableSection>
 
-        private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
-        {
-            int age = DateTime.Now.Year - dateBirth.Date.Year;
-            if (DateTime.Now.Month < dateBirth.Date.Month || 
-                (DateTime.Now.Month == dateBirth.Date.Month && 
-                 DateTime.Now.Day < dateBirth.Date.Day))
-            {
-                age--;
-            }
-            this.age.Text = $"Возраст - {age}";
-        }
+                    <!-- Староста -->
+                    <TableSection Title="Должность">
+                        <SwitchCell x:Name="monitorSwitch" Text="Является старостой"/>
+                    </TableSection>
 
-        private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            mathGrade.Text = mathStepper.Value.ToString("0");
-        }
+                    <!-- Оценки -->
+                    <TableSection Title="Оценки">
+                        <ViewCell>
+                            <StackLayout Orientation="Horizontal" Margin="15,10">
+                                <Label Text="Математика" VerticalOptions="Center" HorizontalOptions="Start"/>
+                                <Label x:Name="mathGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                                <Stepper x:Name="mathStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
+                                       ValueChanged="MathStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
+                            </StackLayout>
+                        </ViewCell>
+                        
+                        <ViewCell>
+                            <StackLayout Orientation="Horizontal" Margin="15,10">
+                                <Label Text="Программирование" VerticalOptions="Center" HorizontalOptions="Start"/>
+                                <Label x:Name="programmingGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                                <Stepper x:Name="programmingStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
+                                       ValueChanged="ProgrammingStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
+                            </StackLayout>
+                        </ViewCell>
+                        
+                        <ViewCell>
+                            <StackLayout Orientation="Horizontal" Margin="15,10">
+                                <Label Text="Английский язык" VerticalOptions="Center" HorizontalOptions="Start"/>
+                                <Label x:Name="englishGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
+                                <Slider x:Name="englishSlider" Minimum="2" Maximum="5" Value="5"
+                                       ThumbColor="Blue" MinimumTrackColor="Green" MaximumTrackColor="Red"
+                                       ValueChanged="EnglishSlider_ValueChanged" HorizontalOptions="FillAndExpand"/>
+                            </StackLayout>
+                        </ViewCell>
+                    </TableSection>
 
-        private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            programmingGrade.Text = programmingStepper.Value.ToString("0");
-        }
+                    <!-- Дополнительная информация -->
+                    <TableSection Title="Дополнительно">
+                        <EntryCell x:Name="additionalInfo" Label="Доп. информация" Placeholder="Хобби, увлечения..."/>
+                        
+                        <ViewCell>
+                            <Button Text="Сохранить студента" Clicked="SaveStudent_Clicked" 
+                                    BackgroundColor="LightGreen" Margin="15,10"/>
+                        </ViewCell>
+                    </TableSection>
+                </TableRoot>
+            </TableView>
+        </ScrollView>
+    </ContentPage>
 
-        private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            englishGrade.Text = englishSlider.Value.ToString("0.0");
-        }
-
-        private void AddPhotoBtn_Clicked(object sender, System.EventArgs e)
-        {
-            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
-        }
-
-        private void SaveStudent_Clicked(object sender, System.EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(lastName.Text) || string.IsNullOrWhiteSpace(firstName.Text))
-            {
-                DisplayAlert("Ошибка", "Заполните обязательные поля (Фамилия и Имя)", "OK");
-                return;
-            }
-
-            var student = new Student
-            {
-                LastName = lastName.Text,
-                FirstName = firstName.Text,
-                MiddleName = middleName.Text,
-                BirthDate = dateBirth.Date,
-                Age = CalculateAge(dateBirth.Date),
-                Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан",
-                NeedsDormitory = dormitorySwitch.On,
-                IsMonitor = monitorSwitch.On,
-                MathGrade = mathGrade.Text,
-                ProgrammingGrade = programmingGrade.Text,
-                EnglishGrade = englishGrade.Text,
-                AdditionalInfo = additionalInfo.Text,
-                Photo = studentPhoto.Source
-            };
-
-            Students.Add(student);
-            ClearForm();
-            DisplayAlert("Успех", "Студент добавлен в список", "OK");
+    <!-- Вкладка для просмотра всех студентов -->
+    <ContentPage Title="Список студентов">
+        <StackLayout>
+            <ListView x:Name="studentsListView" ItemSelected="StudentsListView_ItemSelected">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <StackLayout Padding="10" Orientation="Horizontal">
+                                <Image Source="{Binding Photo}" Aspect="AspectFill" 
+                                       WidthRequest="50" HeightRequest="50"/>
+                                <StackLayout Margin="10,0" VerticalOptions="Center">
+                                    <Label Text="{Binding FullName}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding AgeInfo}" FontSize="Small"/>
+                                    <Label Text="{Binding GradesInfo}" FontSize="Small"/>
+                                </StackLayout>
+                            </StackLayout>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
             
-            // Переключаемся на вкладку со списком
-            CurrentPage = Children[1];
-        }
-
-        private void StudentsListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
-        {
-            selectedStudent = e.SelectedItem as Student;
-            editButton.IsEnabled = selectedStudent != null;
-            deleteButton.IsEnabled = selectedStudent != null;
-        }
-
-        private async void EditButton_Clicked(object sender, System.EventArgs e)
-        {
-            if (selectedStudent == null) return;
-
-            // Загружаем данные выбранного студента в форму редактирования
-            await Navigation.PushAsync(new EditStudentPage(selectedStudent, Students));
-        }
-
-        private async void DeleteButton_Clicked(object sender, System.EventArgs e)
-        {
-            if (selectedStudent == null) return;
-
-            bool result = await DisplayAlert("Подтверждение", 
-                $"Вы действительно хотите удалить студента {selectedStudent.FullName}?", 
-                "Да", "Нет");
-
-            if (result)
-            {
-                Students.Remove(selectedStudent);
-                selectedStudent = null;
-                editButton.IsEnabled = false;
-                deleteButton.IsEnabled = false;
-            }
-        }
-
-        private int CalculateAge(DateTime birthDate)
-        {
-            int age = DateTime.Now.Year - birthDate.Year;
-            if (DateTime.Now.Month < birthDate.Month || 
-                (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
-            {
-                age--;
-            }
-            return age;
-        }
-
-        private void ClearForm()
-        {
-            lastName.Text = string.Empty;
-            firstName.Text = string.Empty;
-            middleName.Text = string.Empty;
-            dateBirth.Date = DateTime.Now;
-            age.Text = "Возраст - ";
-            genderPicker.SelectedIndex = -1;
-            dormitorySwitch.On = false;
-            monitorSwitch.On = false;
-            mathStepper.Value = 5;
-            programmingStepper.Value = 5;
-            englishSlider.Value = 5;
-            additionalInfo.Text = string.Empty;
-            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
-        }
-    }
-}
+            <!-- Кнопки управления -->
+            <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,10">
+                <Button x:Name="editButton" Text="Редактировать" Clicked="EditButton_Clicked" 
+                        BackgroundColor="LightBlue" Margin="5" IsEnabled="False"/>
+                <Button x:Name="deleteButton" Text="Удалить" Clicked="DeleteButton_Clicked" 
+                        BackgroundColor="LightCoral" Margin="5" IsEnabled="False"/>
+            </StackLayout>
+        </StackLayout>
+    </ContentPage>
+</TabbedPage>
