@@ -1,185 +1,36 @@
-Правильно! Реализуем вкладки через AppShell. Вот обновленная структура проекта:
+Понял, нужно строго следовать методичке. Проанализировал лекции и вижу, что в методичке используются простые способы сохранения без JSON. Давайте реализуем точно по методичке.
 
-AppShell.xaml:
+1. Доработка для выбора фото (по лекции №8)
 
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:PR8_MAUI"
-             x:Class="PR8_MAUI.AppShell"
-             Title="PR8-MAUI">
-
-    <TabBar>
-        <Tab Title="Добавить студента" Icon="add_user.png">
-            <ShellContent Route="AddStudent" ContentTemplate="{DataTemplate local:AddStudentPage}" />
-        </Tab>
-        <Tab Title="Список студентов" Icon="list.png">
-            <ShellContent Route="StudentList" ContentTemplate="{DataTemplate local:StudentListPage}" />
-        </Tab>
-    </TabBar>
-
-</Shell>
-```
-
-AppShell.xaml.cs:
-
-```csharp
-namespace PR8_MAUI
-{
-    public partial class AppShell : Shell
-    {
-        public AppShell()
-        {
-            InitializeComponent();
-        }
-    }
-}
-```
-
-App.xaml.cs:
-
-```csharp
-namespace PR8_MAUI
-{
-    public partial class App : Application
-    {
-        public App()
-        {
-            InitializeComponent();
-            MainPage = new AppShell();
-        }
-    }
-}
-```
-
-AddStudentPage.xaml (бывшая первая вкладка):
-
-```xml
-<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="PR8_MAUI.AddStudentPage"
-             Title="Добавить студента">
-    
-    <ScrollView>
-        <TableView Intent="Form" HeightRequest="800">
-            <TableRoot>
-                <!-- Персональные данные -->
-                <TableSection Title="Персональные данные">
-                    <EntryCell x:Name="lastName" Label="Фамилия" Placeholder="Введите фамилию"/>
-                    <EntryCell x:Name="firstName" Label="Имя" Placeholder="Введите имя"/>
-                    <EntryCell x:Name="middleName" Label="Отчество" Placeholder="Введите отчество"/>
-                    
-                    <ViewCell>
-                        <StackLayout Orientation="Horizontal" Margin="15,0,15,0">
-                            <Label Text="Дата рождения" VerticalOptions="Center"/>
-                            <DatePicker x:Name="dateBirth" DateSelected="dateBirth_DateSelected" 
-                                       HorizontalOptions="FillAndExpand"/>
-                        </StackLayout>
-                    </ViewCell>
-                    
-                    <TextCell x:Name="age" Text="Возраст - "/>
-                    
-                    <ViewCell>
-                        <StackLayout Orientation="Horizontal" Margin="15,0,15,0">
-                            <Label Text="Пол" VerticalOptions="Center" Margin="0,0,10,0"/>
-                            <Picker x:Name="genderPicker" Title="Выберите пол" HorizontalOptions="FillAndExpand">
-                                <Picker.Items>
-                                    <x:String>Мужской</x:String>
-                                    <x:String>Женский</x:String>
-                                </Picker.Items>
-                            </Picker>
-                        </StackLayout>
-                    </ViewCell>
-                </TableSection>
-
-                <!-- Фото -->
-                <TableSection Title="Фотография">
-                    <ViewCell>
-                        <StackLayout Orientation="Vertical" Padding="15,10">
-                            <Button x:Name="addPhotoBtn" Text="Добавить фото" 
-                                    Clicked="AddPhotoBtn_Clicked" HorizontalOptions="Center"/>
-                            <Image x:Name="studentPhoto" Source="dotnet_bot.svg" 
-                                   Aspect="AspectFit" HeightRequest="150" 
-                                   HorizontalOptions="Center" Margin="0,10,0,0"/>
-                        </StackLayout>
-                    </ViewCell>
-                </TableSection>
-
-                <!-- Проживание -->
-                <TableSection Title="Проживание">
-                    <SwitchCell x:Name="dormitorySwitch" Text="Нужно общежитие"/>
-                </TableSection>
-
-                <!-- Староста -->
-                <TableSection Title="Должность">
-                    <SwitchCell x:Name="monitorSwitch" Text="Является старостой"/>
-                </TableSection>
-
-                <!-- Оценки -->
-                <TableSection Title="Оценки">
-                    <ViewCell>
-                        <StackLayout Orientation="Horizontal" Margin="15,10">
-                            <Label Text="Математика" VerticalOptions="Center" HorizontalOptions="Start"/>
-                            <Label x:Name="mathGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
-                            <Stepper x:Name="mathStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
-                                   ValueChanged="MathStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </ViewCell>
-                    
-                    <ViewCell>
-                        <StackLayout Orientation="Horizontal" Margin="15,10">
-                            <Label Text="Программирование" VerticalOptions="Center" HorizontalOptions="Start"/>
-                            <Label x:Name="programmingGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
-                            <Stepper x:Name="programmingStepper" Minimum="2" Maximum="5" Increment="1" Value="5"
-                                   ValueChanged="ProgrammingStepper_ValueChanged" HorizontalOptions="EndAndExpand"/>
-                        </StackLayout>
-                    </ViewCell>
-                    
-                    <ViewCell>
-                        <StackLayout Orientation="Horizontal" Margin="15,10">
-                            <Label Text="Английский язык" VerticalOptions="Center" HorizontalOptions="Start"/>
-                            <Label x:Name="englishGrade" Text="5" VerticalOptions="Center" Margin="10,0"/>
-                            <Slider x:Name="englishSlider" Minimum="2" Maximum="5" Value="5"
-                                   ThumbColor="Blue" MinimumTrackColor="Green" MaximumTrackColor="Red"
-                                   ValueChanged="EnglishSlider_ValueChanged" HorizontalOptions="FillAndExpand"/>
-                        </StackLayout>
-                    </ViewCell>
-                </TableSection>
-
-                <!-- Дополнительная информация -->
-                <TableSection Title="Дополнительно">
-                    <EntryCell x:Name="additionalInfo" Label="Доп. информация" Placeholder="Хобби, увлечения..."/>
-                    
-                    <ViewCell>
-                        <Button Text="Сохранить студента" Clicked="SaveStudent_Clicked" 
-                                BackgroundColor="LightGreen" Margin="15,10" TextColor="Black"/>
-                    </ViewCell>
-                </TableSection>
-            </TableRoot>
-        </TableView>
-    </ScrollView>
-</ContentPage>
-```
-
-AddStudentPage.xaml.cs:
+Обновите MainPage.xaml.cs:
 
 ```csharp
 using Microsoft.Maui.Controls;
-using System.Collections.ObjectModel;
+using Microsoft.Maui.Storage;
 
 namespace PR8_MAUI
 {
-    public partial class AddStudentPage : ContentPage
+    public partial class MainPage : ContentPage
     {
-        public static ObservableCollection<Student> Students { get; set; } = new ObservableCollection<Student>();
+        private bool _needsDormitory = false;
+        private bool _isMonitor = false;
+        private string _selectedPhotoPath;
 
-        public AddStudentPage()
+        public MainPage()
         {
             InitializeComponent();
             dateBirth.Date = DateTime.Now.AddYears(-18);
             UpdateAge();
+        }
+
+        private void OnDormitoryToggled(object sender, ToggledEventArgs e)
+        {
+            _needsDormitory = e.Value;
+        }
+
+        private void OnMonitorToggled(object sender, ToggledEventArgs e)
+        {
+            _isMonitor = e.Value;
         }
 
         private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
@@ -189,37 +40,54 @@ namespace PR8_MAUI
 
         private void UpdateAge()
         {
-            int age = DateTime.Now.Year - dateBirth.Date.Year;
-            if (DateTime.Now.Month < dateBirth.Date.Month || 
-                (DateTime.Now.Month == dateBirth.Date.Month && 
-                 DateTime.Now.Day < dateBirth.Date.Day))
+            int ageValue = DateTime.Now.Year - dateBirth.Date.Year;
+            if (DateTime.Now.Month < dateBirth.Date.Month ||
+                (DateTime.Now.Month == dateBirth.Date.Month && DateTime.Now.Day < dateBirth.Date.Day))
             {
-                age--;
+                ageValue--;
             }
-            this.age.Text = $"Возраст - {age}";
+            age.Text = $"Возраст - {ageValue}";
         }
 
         private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
         {
-            mathGrade.Text = mathStepper.Value.ToString("0");
+            mathGrade.Text = ((int)e.NewValue).ToString();
         }
 
         private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
         {
-            programmingGrade.Text = programmingStepper.Value.ToString("0");
+            programmingGrade.Text = ((int)e.NewValue).ToString();
         }
 
         private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
         {
-            englishGrade.Text = englishSlider.Value.ToString("0.0");
+            englishGrade.Text = e.NewValue.ToString("0.0");
         }
 
-        private void AddPhotoBtn_Clicked(object sender, System.EventArgs e)
+        private async void AddPhotoBtn_Clicked(object sender, EventArgs e)
         {
-            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
+            try
+            {
+                var options = new PickOptions
+                {
+                    PickerTitle = "Выберите картинку",
+                    FileTypes = FilePickerFileType.Images,
+                };
+
+                var result = await FilePicker.PickAsync(options);
+                if (result != null)
+                {
+                    _selectedPhotoPath = result.FullPath;
+                    studentPhoto.Source = ImageSource.FromFile(_selectedPhotoPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Ошибка", $"Не удалось загрузить фото: {ex.Message}", "OK");
+            }
         }
 
-        private async void SaveStudent_Clicked(object sender, System.EventArgs e)
+        private async void SaveStudent_Clicked(object sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(lastName.Text) || string.IsNullOrWhiteSpace(firstName.Text))
             {
@@ -235,8 +103,8 @@ namespace PR8_MAUI
                 BirthDate = dateBirth.Date,
                 Age = CalculateAge(dateBirth.Date),
                 Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан",
-                NeedsDormitory = dormitorySwitch.On,
-                IsMonitor = monitorSwitch.On,
+                NeedsDormitory = _needsDormitory,
+                IsMonitor = _isMonitor,
                 MathGrade = mathGrade.Text,
                 ProgrammingGrade = programmingGrade.Text,
                 EnglishGrade = englishGrade.Text,
@@ -244,23 +112,10 @@ namespace PR8_MAUI
                 Photo = studentPhoto.Source
             };
 
-            Students.Add(student);
+            StudentService.Students.Add(student);
             ClearForm();
             await DisplayAlert("Успех", $"Студент {student.FullName} добавлен в список", "OK");
-            
-            // Переходим на вкладку со списком студентов
             await Shell.Current.GoToAsync("//StudentList");
-        }
-
-        private int CalculateAge(DateTime birthDate)
-        {
-            int age = DateTime.Now.Year - birthDate.Year;
-            if (DateTime.Now.Month < birthDate.Month || 
-                (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
-            {
-                age--;
-            }
-            return age;
         }
 
         private void ClearForm()
@@ -271,201 +126,15 @@ namespace PR8_MAUI
             dateBirth.Date = DateTime.Now.AddYears(-18);
             UpdateAge();
             genderPicker.SelectedIndex = -1;
-            dormitorySwitch.On = false;
-            monitorSwitch.On = false;
-            mathStepper.Value = 5;
-            programmingStepper.Value = 5;
-            englishSlider.Value = 5;
             additionalInfo.Text = string.Empty;
-            studentPhoto.Source = ImageSource.FromFile("dotnet_bot.svg");
-        }
-    }
-}
-```
-
-StudentListPage.xaml (бывшая вторая вкладка):
-
-```xml
-<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="PR8_MAUI.StudentListPage"
-             Title="Список студентов">
-    
-    <StackLayout>
-        <Label Text="PR8-MAUI - Список студентов" FontSize="20" FontAttributes="Bold" 
-               HorizontalOptions="Center" Margin="0,10"/>
-        
-        <ListView x:Name="studentsListView" ItemSelected="StudentsListView_ItemSelected" 
-                  HeightRequest="500" HasUnevenRows="True">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <ViewCell>
-                        <Frame Margin="10,5" BackgroundColor="White" BorderColor="LightGray">
-                            <StackLayout Padding="10" Orientation="Horizontal">
-                                <Image Source="{Binding Photo}" Aspect="AspectFill" 
-                                       WidthRequest="60" HeightRequest="60"/>
-                                <StackLayout Margin="10,0" VerticalOptions="Center" HorizontalOptions="FillAndExpand">
-                                    <Label Text="{Binding FullName}" FontAttributes="Bold" FontSize="16"/>
-                                    <Label Text="{Binding AgeInfo}" FontSize="12" TextColor="Gray"/>
-                                    <Label Text="{Binding GradesInfo}" FontSize="12" TextColor="Gray"/>
-                                    <Label Text="{Binding DormitoryInfo}" FontSize="12" TextColor="Blue"/>
-                                    <Label Text="{Binding MonitorInfo}" FontSize="12" TextColor="DarkOrange"/>
-                                </StackLayout>
-                            </StackLayout>
-                        </Frame>
-                    </ViewCell>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-        
-        <!-- Кнопки управления -->
-        <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Margin="0,10">
-            <Button x:Name="editButton" Text="Редактировать" Clicked="EditButton_Clicked" 
-                    BackgroundColor="LightBlue" Margin="5" IsEnabled="False" TextColor="Black"/>
-            <Button x:Name="deleteButton" Text="Удалить" Clicked="DeleteButton_Clicked" 
-                    BackgroundColor="LightCoral" Margin="5" IsEnabled="False" TextColor="Black"/>
-        </StackLayout>
-    </StackLayout>
-</ContentPage>
-```
-
-StudentListPage.xaml.cs:
-
-```csharp
-using Microsoft.Maui.Controls;
-
-namespace PR8_MAUI
-{
-    public partial class StudentListPage : ContentPage
-    {
-        private Student selectedStudent;
-
-        public StudentListPage()
-        {
-            InitializeComponent();
-        }
-
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-            studentsListView.ItemsSource = null;
-            studentsListView.ItemsSource = AddStudentPage.Students;
-        }
-
-        private void StudentsListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
-        {
-            selectedStudent = e.SelectedItem as Student;
-            editButton.IsEnabled = selectedStudent != null;
-            deleteButton.IsEnabled = selectedStudent != null;
-        }
-
-        private async void EditButton_Clicked(object sender, System.EventArgs e)
-        {
-            if (selectedStudent == null) return;
-
-            await Navigation.PushAsync(new EditStudentPage(selectedStudent));
-        }
-
-        private async void DeleteButton_Clicked(object sender, System.EventArgs e)
-        {
-            if (selectedStudent == null) return;
-
-            bool result = await DisplayAlert("PR8-MAUI - Подтверждение удаления", 
-                $"Вы действительно хотите удалить студента {selectedStudent.FullName}?", 
-                "Да", "Нет");
-
-            if (result)
-            {
-                AddStudentPage.Students.Remove(selectedStudent);
-                selectedStudent = null;
-                editButton.IsEnabled = false;
-                deleteButton.IsEnabled = false;
-                await DisplayAlert("Успех", "Студент удален из списка", "OK");
-            }
-        }
-    }
-}
-```
-
-EditStudentPage.xaml (остается без изменений, но обновляем код):
-
-```csharp
-using Microsoft.Maui.Controls;
-
-namespace PR8_MAUI
-{
-    public partial class EditStudentPage : ContentPage
-    {
-        private Student student;
-
-        public EditStudentPage(Student studentToEdit)
-        {
-            InitializeComponent();
-            student = studentToEdit;
-            LoadStudentData();
-        }
-
-        private void LoadStudentData()
-        {
-            lastNameEntry.Text = student.LastName;
-            firstNameEntry.Text = student.FirstName;
-            middleNameEntry.Text = student.MiddleName;
-            birthDatePicker.Date = student.BirthDate;
-            genderPicker.SelectedItem = student.Gender;
-            dormitorySwitch.IsToggled = student.NeedsDormitory;
-            monitorSwitch.IsToggled = student.IsMonitor;
-            mathStepper.Value = double.Parse(student.MathGrade);
-            programmingStepper.Value = double.Parse(student.ProgrammingGrade);
-            englishSlider.Value = double.Parse(student.EnglishGrade);
-            additionalInfoEditor.Text = student.AdditionalInfo;
-        }
-
-        private void MathStepper_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            mathGradeLabel.Text = mathStepper.Value.ToString("0");
-        }
-
-        private void ProgrammingStepper_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            programmingGradeLabel.Text = programmingStepper.Value.ToString("0");
-        }
-
-        private void EnglishSlider_ValueChanged(object sender, ValueChangedEventArgs e)
-        {
-            englishGradeLabel.Text = englishSlider.Value.ToString("0.0");
-        }
-
-        private async void SaveChanges_Clicked(object sender, System.EventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(lastNameEntry.Text) || string.IsNullOrWhiteSpace(firstNameEntry.Text))
-            {
-                await DisplayAlert("PR8-MAUI - Ошибка", "Заполните обязательные поля (Фамилия и Имя)", "OK");
-                return;
-            }
-
-            // Обновляем данные студента
-            student.LastName = lastNameEntry.Text;
-            student.FirstName = firstNameEntry.Text;
-            student.MiddleName = middleNameEntry.Text;
-            student.BirthDate = birthDatePicker.Date;
-            student.Age = CalculateAge(birthDatePicker.Date);
-            student.Gender = genderPicker.SelectedItem?.ToString() ?? "Не указан";
-            student.NeedsDormitory = dormitorySwitch.IsToggled;
-            student.IsMonitor = monitorSwitch.IsToggled;
-            student.MathGrade = mathGradeLabel.Text;
-            student.ProgrammingGrade = programmingGradeLabel.Text;
-            student.EnglishGrade = englishGradeLabel.Text;
-            student.AdditionalInfo = additionalInfoEditor.Text;
-
-            await DisplayAlert("PR8-MAUI - Успех", "Данные студента обновлены", "OK");
-            await Navigation.PopAsync();
+            studentPhoto.Source = "dotnet_bot.png";
+            _selectedPhotoPath = null;
         }
 
         private int CalculateAge(DateTime birthDate)
         {
             int age = DateTime.Now.Year - birthDate.Year;
-            if (DateTime.Now.Month < birthDate.Month || 
+            if (DateTime.Now.Month < birthDate.Month ||
                 (DateTime.Now.Month == birthDate.Month && DateTime.Now.Day < birthDate.Day))
             {
                 age--;
@@ -476,43 +145,358 @@ namespace PR8_MAUI
 }
 ```
 
-Student.cs (без изменений):
+2. Приложение с сохранением через Preferences (точно по методичке)
+
+Создайте новый файл MainPagePreferences.xaml:
+
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PR8_MAUI.MainPagePreferences"
+             Title="PR8-MAUI - Preferences">
+
+    <ScrollView>
+        <StackLayout Padding="20">
+            
+            <Label Text="Добавление студента (Preferences)"
+                   FontSize="20" FontAttributes="Bold"
+                   HorizontalOptions="Center" Margin="0,0,0,20"/>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Фамилия:" FontAttributes="Bold"/>
+                    <Entry x:Name="lastName" Placeholder="Введите фамилию"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Имя:" FontAttributes="Bold"/>
+                    <Entry x:Name="firstName" Placeholder="Введите имя"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Отчество:" FontAttributes="Bold"/>
+                    <Entry x:Name="middleName" Placeholder="Введите отчество"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Дата рождения:" FontAttributes="Bold"/>
+                    <DatePicker x:Name="dateBirth" DateSelected="dateBirth_DateSelected"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Пол:" FontAttributes="Bold"/>
+                    <Picker x:Name="genderPicker" Title="Выберите пол">
+                        <Picker.Items>
+                            <x:String>Мужской</x:String>
+                            <x:String>Женский</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </StackLayout>
+            </Frame>
+
+            <Label x:Name="age" Text="Возраст - 18" FontAttributes="Bold" HorizontalOptions="Center" Margin="0,10"/>
+
+            <Button Text="Сохранить в Preferences" Clicked="SaveToPreferences_Clicked"
+                    BackgroundColor="LightBlue" Margin="0,10" TextColor="Black"/>
+                    
+            <Button Text="Загрузить из Preferences" Clicked="LoadFromPreferences_Clicked"
+                    BackgroundColor="LightGreen" Margin="0,10" TextColor="Black"/>
+                    
+            <Button Text="Очистить Preferences" Clicked="ClearPreferences_Clicked"
+                    BackgroundColor="LightCoral" Margin="0,10" TextColor="Black"/>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
+```
+
+Создайте MainPagePreferences.xaml.cs:
 
 ```csharp
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
+
 namespace PR8_MAUI
 {
-    public class Student
+    public partial class MainPagePreferences : ContentPage
     {
-        public string LastName { get; set; }
-        public string FirstName { get; set; }
-        public string MiddleName { get; set; }
-        public string FullName => $"{LastName} {FirstName} {MiddleName}";
-        public DateTime BirthDate { get; set; }
-        public int Age { get; set; }
-        public string Gender { get; set; }
-        public bool NeedsDormitory { get; set; }
-        public bool IsMonitor { get; set; }
-        public string MathGrade { get; set; }
-        public string ProgrammingGrade { get; set; }
-        public string EnglishGrade { get; set; }
-        public string AdditionalInfo { get; set; }
-        public ImageSource Photo { get; set; }
+        public MainPagePreferences()
+        {
+            InitializeComponent();
+            dateBirth.Date = DateTime.Now.AddYears(-18);
+            UpdateAge();
+        }
 
-        public string AgeInfo => $"Возраст: {Age} лет";
-        public string GradesInfo => $"Оценки: М:{MathGrade}, П:{ProgrammingGrade}, А:{EnglishGrade}";
-        public string DormitoryInfo => NeedsDormitory ? "Нужно общежитие" : "Не нужно общежитие";
-        public string MonitorInfo => IsMonitor ? "Староста" : "Не староста";
+        private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
+        {
+            UpdateAge();
+        }
+
+        private void UpdateAge()
+        {
+            int ageValue = DateTime.Now.Year - dateBirth.Date.Year;
+            if (DateTime.Now.Month < dateBirth.Date.Month ||
+                (DateTime.Now.Month == dateBirth.Date.Month && DateTime.Now.Day < dateBirth.Date.Day))
+            {
+                ageValue--;
+            }
+            age.Text = $"Возраст - {ageValue}";
+        }
+
+        private void SaveToPreferences_Clicked(object sender, System.EventArgs e)
+        {
+            // Сохранение данных в Preferences (как в методичке стр. 3)
+            Preferences.Default.Set("familia", lastName.Text);
+            Preferences.Default.Set("name", firstName.Text);
+            Preferences.Default.Set("otchestvo", middleName.Text);
+            Preferences.Default.Set("birthDate", dateBirth.Date);
+            Preferences.Default.Set("gender", genderPicker.SelectedItem?.ToString() ?? "");
+            Preferences.Default.Set("age", age.Text);
+
+            DisplayAlert("Успех", "Данные сохранены в Preferences", "OK");
+        }
+
+        private void LoadFromPreferences_Clicked(object sender, System.EventArgs e)
+        {
+            // Загрузка данных из Preferences (как в методичке стр. 3)
+            lastName.Text = Preferences.Default.Get("familia", "");
+            firstName.Text = Preferences.Default.Get("name", "");
+            middleName.Text = Preferences.Default.Get("otchestvo", "");
+            dateBirth.Date = Preferences.Default.Get("birthDate", DateTime.Now.AddYears(-18));
+            
+            var savedGender = Preferences.Default.Get("gender", "");
+            if (!string.IsNullOrEmpty(savedGender))
+            {
+                genderPicker.SelectedItem = savedGender;
+            }
+            
+            age.Text = Preferences.Default.Get("age", "Возраст - 18");
+
+            DisplayAlert("Успех", "Данные загружены из Preferences", "OK");
+        }
+
+        private void ClearPreferences_Clicked(object sender, System.EventArgs e)
+        {
+            // Очистка Preferences (как в методичке стр. 3)
+            Preferences.Default.Remove("familia");
+            Preferences.Default.Remove("name");
+            Preferences.Default.Remove("otchestvo");
+            Preferences.Default.Remove("birthDate");
+            Preferences.Default.Remove("gender");
+            Preferences.Default.Remove("age");
+
+            // Очистка полей формы
+            lastName.Text = "";
+            firstName.Text = "";
+            middleName.Text = "";
+            dateBirth.Date = DateTime.Now.AddYears(-18);
+            genderPicker.SelectedIndex = -1;
+            UpdateAge();
+
+            DisplayAlert("Успех", "Preferences очищены", "OK");
+        }
     }
 }
 ```
 
-Преимущества реализации через AppShell:
+3. Приложение с сохранением через файлы (точно по методичке)
 
-1. Нативная навигация - стандартный подход MAUI
-2. Нижние вкладки - современный UI паттерн
-3. Автоматическое управление навигацией - Shell берет на себя маршрутизацию
-4. Легкое переключение между вкладками - через Shell.Current.GoToAsync()
-5. Иконки вкладок - визуальное улучшение
-6. Единая точка входа - AppShell управляет всей навигацией
+Создайте MainPageFiles.xaml:
 
-Теперь приложение использует правильную архитектуру MAUI с AppShell для управления вкладками!
+```xml
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PR8_MAUI.MainPageFiles"
+             Title="PR8-MAUI - Files">
+
+    <ScrollView>
+        <StackLayout Padding="20">
+            
+            <Label Text="Добавление студента (Files)"
+                   FontSize="20" FontAttributes="Bold"
+                   HorizontalOptions="Center" Margin="0,0,0,20"/>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Фамилия:" FontAttributes="Bold"/>
+                    <Entry x:Name="lastName" Placeholder="Введите фамилию"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Имя:" FontAttributes="Bold"/>
+                    <Entry x:Name="firstName" Placeholder="Введите имя"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Отчество:" FontAttributes="Bold"/>
+                    <Entry x:Name="middleName" Placeholder="Введите отчество"/>
+                </StackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="#F0F0F0" Padding="15" Margin="0,0,0,10">
+                <StackLayout>
+                    <Label Text="Дата рождения:" FontAttributes="Bold"/>
+                    <DatePicker x:Name="dateBirth" DateSelected="dateBirth_DateSelected"/>
+                </StackLayout>
+            </Frame>
+
+            <Label x:Name="age" Text="Возраст - 18" FontAttributes="Bold" HorizontalOptions="Center" Margin="0,10"/>
+
+            <Button Text="Сохранить в файл" Clicked="SaveToFile_Clicked"
+                    BackgroundColor="LightBlue" Margin="0,10" TextColor="Black"/>
+                    
+            <Button Text="Загрузить из файла" Clicked="LoadFromFile_Clicked"
+                    BackgroundColor="LightGreen" Margin="0,10" TextColor="Black"/>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
+```
+
+Создайте MainPageFiles.xaml.cs:
+
+```csharp
+using Microsoft.Maui.Controls;
+
+namespace PR8_MAUI
+{
+    public partial class MainPageFiles : ContentPage
+    {
+        private string folderPath;
+
+        public MainPageFiles()
+        {
+            InitializeComponent();
+            dateBirth.Date = DateTime.Now.AddYears(-18);
+            UpdateAge();
+            
+            // Получаем путь к папке приложения (как в методичке стр. 5)
+            folderPath = FileSystem.Current.AppDataDirectory;
+        }
+
+        private void dateBirth_DateSelected(object sender, DateChangedEventArgs e)
+        {
+            UpdateAge();
+        }
+
+        private void UpdateAge()
+        {
+            int ageValue = DateTime.Now.Year - dateBirth.Date.Year;
+            if (DateTime.Now.Month < dateBirth.Date.Month ||
+                (DateTime.Now.Month == dateBirth.Date.Month && DateTime.Now.Day < dateBirth.Date.Day))
+            {
+                ageValue--;
+            }
+            age.Text = $"Возраст - {ageValue}";
+        }
+
+        private void SaveToFile_Clicked(object sender, System.EventArgs e)
+        {
+            try
+            {
+                // Сохранение в файл (как в методичке стр. 5-6)
+                StreamWriter outFile = new StreamWriter(Path.Combine(folderPath, "student.txt"));
+                outFile.WriteLine(lastName.Text);
+                outFile.WriteLine(firstName.Text);
+                outFile.WriteLine(middleName.Text);
+                outFile.WriteLine(dateBirth.Date.ToString());
+                outFile.WriteLine(age.Text);
+                outFile.Close();
+
+                DisplayAlert("Успех", $"Данные сохранены в файл: {Path.Combine(folderPath, "student.txt")}", "OK");
+            }
+            catch (Exception ex)
+            {
+                DisplayAlert("Ошибка", $"Не удалось сохранить файл: {ex.Message}", "OK");
+            }
+        }
+
+        private void LoadFromFile_Clicked(object sender, System.EventArgs e)
+        {
+            try
+            {
+                string filePath = Path.Combine(folderPath, "student.txt");
+                
+                // Проверка существования файла (как в методичке стр. 6)
+                if (File.Exists(filePath))
+                {
+                    StreamReader inFile = new StreamReader(filePath);
+                    lastName.Text = inFile.ReadLine();
+                    firstName.Text = inFile.ReadLine();
+                    middleName.Text = inFile.ReadLine();
+                    
+                    var dateStr = inFile.ReadLine();
+                    if (DateTime.TryParse(dateStr, out DateTime birthDate))
+                    {
+                        dateBirth.Date = birthDate;
+                    }
+                    
+                    age.Text = inFile.ReadLine();
+                    inFile.Close();
+
+                    DisplayAlert("Успех", "Данные загружены из файла", "OK");
+                }
+                else
+                {
+                    DisplayAlert("Ошибка", "Файл не найден", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                DisplayAlert("Ошибка", $"Не удалось загрузить файл: {ex.Message}", "OK");
+            }
+        }
+    }
+}
+```
+
+4. Обновите AppShell.xaml для навигации между приложениями:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="PR8_MAUI.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:PR8_MAUI"
+    Title="PR8_MAUI">
+
+    <TabBar>
+        <Tab Title="Основное приложение">
+            <ShellContent Route="MainPage" ContentTemplate="{DataTemplate local:MainPage}" />
+        </Tab>
+        <Tab Title="Список студентов">
+            <ShellContent Route="StudentList" ContentTemplate="{DataTemplate local:StudentListPage}" />
+        </Tab>
+        <Tab Title="Preferences">
+            <ShellContent Route="Preferences" ContentTemplate="{DataTemplate local:MainPagePreferences}" />
+        </Tab>
+        <Tab Title="Files">
+            <ShellContent Route="Files" ContentTemplate="{DataTemplate local:MainPageFiles}" />
+        </Tab>
+    </TabBar>
+
+</Shell>
+```
+
+Теперь у вас есть три приложения, как требуется в методичке:
+
+1. Основное приложение - с выбором фото через FilePicker
+2. Preferences приложение - сохранение через Preferences (строго по стр. 3 методички)
+3. Files приложение - сохранение через текстовые файлы (строго по стр. 5-6 методички)
+
+Все реализации точно соответствуют примерам из предоставленной методички.
